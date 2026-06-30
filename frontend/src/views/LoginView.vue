@@ -69,31 +69,3 @@ const hacerLogin = async () => {
   }
 };
 </script>
-
-<style scoped>
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #f4f6f9;
-}
-.login-box {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-}
-.form-group {
-  margin-bottom: 1rem;
-  text-align: left;
-}
-label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
-input { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-button { width: 100%; padding: 0.75rem; background-color: #0056b3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; margin-top: 1rem;}
-button:disabled { background-color: #a0c4e8; cursor: not-allowed; }
-.error { color: red; font-size: 0.9rem; margin-top: 0.5rem; }
-</style>
