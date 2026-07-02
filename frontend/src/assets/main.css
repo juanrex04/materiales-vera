@@ -9,6 +9,7 @@
   --text-muted: #94a3b8;
   --primary-blue: #3b82f6;
   --primary-hover: #2563eb;
+  --edit-orange: #efa938;
   --danger-red: #ef4444;
   --border-color: #cbd5e1;
 }
@@ -118,21 +119,26 @@ body {
   border-radius: 6px;
   cursor: pointer;
 }
+
 .btn-edit {
   background-color: #efa938;
+  color: white;
   border: 1px solid var(--border-color);
   padding: 0.6rem 1.2rem;
   border-radius: 4px;
   cursor: pointer;
   margin-right: 5px;
+  font-weight: bold;
 }
+
 .btn-delete {
-  background-color: #fef2f2;
-  color: var(--danger-red);
+  background-color: var(--danger-red);
+  color: #fef2f2;
   border: 1px solid #fee2e2;
   padding: 0.6rem 1.2rem;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: bold;
 }
 
 /* ========================================================
@@ -385,6 +391,60 @@ select {
 .badge-estado.mantenimiento {
   background-color: #fef3c7;
   color: #d97706;
+}
+
+/* Estilos adicionales que enriquecen el main.css solo para esta vista */
+.checklist-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.checklist-box {
+  margin-top: 2rem;
+  border-top: 2px dashed var(--border-color);
+  padding-top: 1.5rem;
+}
+
+/* ========================================================
+   8. Diseño de los ítems del checklist tipo Tarjeta interactiva 
+   ======================================================== */
+.checklist-item {
+  display: flex;
+  align-items: center;
+  background-color: #f8fafc;
+  border: 1px solid var(--border-color);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.checklist-item:hover {
+  background-color: #f1f5f9;
+  border-color: var(--primary-blue);
+}
+
+.checklist-item input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  margin-right: 1.5rem;
+  cursor: pointer;
+  accent-color: var(--primary-blue); /* Pinta el cuadrito de azul cuando se marca */
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.item-info strong {
+  font-size: 1.05rem;
+  color: #334155;
+}
+
+.item-info small {
+  color: #64748b;
+  margin-top: 0.2rem;
 }
 
 /* ========================================================

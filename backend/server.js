@@ -42,6 +42,23 @@ const verificarToken = (req, res, next) => {
   }
 };
 
+// --- RUTA DE EMERGENCIA PARA ARREGLAR CONTRASEÑA ---
+/*app.get('/api/fix-admin', async (req, res) => {
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('123456', salt); // Encriptamos '123456'
+    
+    await pool.query(
+      'UPDATE colaboradores SET password = ? WHERE email = "admin@materialesvera.com"', 
+      [hashedPassword]
+    );
+    
+    res.json({ mensaje: '¡Éxito! Contraseña del admin actualizada correctamente a 123456.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});*/
+
 const esAdmin = (req, res, next) => {
   if (req.usuario && req.usuario.rol === 'Admin') {
     next();
@@ -166,6 +183,85 @@ app.get('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
     });
     res.json(listaProcesada);
   } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+
+// ==========================================
+// 7. CHECKLIST VERIFICACIÓN DIARIA VEHICULO
+// ==========================================
+// OBTENER VEHICULOS LIBRES
+app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res) => {
+  try {
+    // Traemos los carros que NO tienen un checklist registrado con la fecha del día de hoy
+    const query = `
+      SELECT id, placa, marca, estado 
+      FROM vehiculos 
+      WHERE id NOT IN (
+        SELECT vehiculo_id 
+        FROM checklists_diarios 
+        WHERE fecha = CURRENT_DATE()
+      ) AND estado != 'En Ruta';
+    `;
+    
+    const [vehiculos] = await pool.query(query);
+    res.json(vehiculos);
+  } catch (error) {
+    console.error('Error al obtener vehículos:', error);
+    res.status(500).json({ error: 'Error en el servidor al consultar vehículos.' });
+  }
+});
+
+// GUARDAR CHECKLIST DE CARRO ENVIADO
+app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
+  const { 
+    vehiculo_id, luces_ok, frenos_ok, llantas_ok, 
+    aceite_agua_ok, documentos_ok, limpieza_ok, observaciones 
+  } = req.body;
+  
+  // Extraemos el ID del colaborador autenticado (el conductor)
+  // Nota: Asegúrate de usar la propiedad exacta donde tu middleware de token guarda el ID (ej: req.colaborador.id o req.usuario.id)
+  const colaborador_id = req.usuario.id; 
+
+  // Un carro está apto si cumple con los 5 puntos críticos obligatorios de seguridad
+  const apto_para_trabajar = (luces_ok && frenos_ok && llantas_ok && aceite_agua_ok && documentos_ok);
+
+  try {
+    // Doble validación de seguridad: verificar que no le hayan hecho checklist hoy a ese carro
+    const [existe] = await pool.query(
+      'SELECT id FROM checklists_diarios WHERE vehiculo_id = ? AND fecha = CURRENT_DATE()', 
+      [vehiculo_id]
+    );
+
+    if (existe.length > 0) {
+      return res.status(400).json({ error: 'Este vehículo ya fue verificado por otro conductor el día de hoy.' });
+    }
+
+    // Insertar el nuevo registro en la base de datos
+    const insertQuery = `
+      INSERT INTO checklists_diarios 
+      (vehiculo_id, colaborador_id, luces_ok, frenos_ok, llantas_ok, aceite_agua_ok, documentos_ok, limpieza_ok, observaciones, apto_para_trabajar)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    await pool.query(insertQuery, [
+      vehiculo_id, colaborador_id, luces_ok, frenos_ok, llantas_ok, aceite_agua_ok, documentos_ok, limpieza_ok, observaciones, apto_para_trabajar
+    ]);
+
+    // Si el vehículo NO está apto, automáticamente le cambiamos el estado a 'Mantenimiento' para alertar al administrador
+    if (!apto_para_trabajar) {
+      await db.query("UPDATE vehiculos SET estado = 'Mantenimiento' WHERE id = ?", [vehiculo_id]);
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Checklist guardado con éxito.', 
+      apto: apto_para_trabajar 
+    });
+
+  } catch (error) {
+    console.error('Error al insertar checklist:', error);
+    res.status(500).json({ error: 'Error interno al guardar la inspección.' });
+  }
 });
 
 // CREAR

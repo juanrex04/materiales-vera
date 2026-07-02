@@ -3,20 +3,20 @@
     <div class="login-box">
       <h2>Materiales Vera</h2>
       <p>Ingresa tus credenciales</p>
-      
+
       <form @submit.prevent="hacerLogin">
         <div class="form-group">
           <label for="email">Correo Electrónico</label>
           <input type="email" id="email" v-model="email" required placeholder="Ingresa el correo empresarial" />
         </div>
-        
+
         <div class="form-group">
           <label for="password">Contraseña</label>
           <input type="password" id="password" v-model="password" required placeholder="******" />
         </div>
-        
+
         <p v-if="mensajeError" class="error">{{ mensajeError }}</p>
-        
+
         <button type="submit" :disabled="cargando">
           {{ cargando ? 'Conectando...' : 'Iniciar Sesión' }}
         </button>
@@ -59,9 +59,12 @@ const hacerLogin = async () => {
     localStorage.setItem('rol', data.rol);
     localStorage.setItem('nombre', data.nombre);
 
-    // Redirigir al panel de control (Dashboard)
-    router.push('/dashboard');
-    
+    if (data.rol == 'Admin') {
+      // Redirigir al panel de control (Dashboard)
+      router.push('/dashboard');
+    } else if (data.rol == 'Conductor') {
+      router.push('/conductores')
+    }
   } catch (error) {
     mensajeError.value = error.message;
   } finally {

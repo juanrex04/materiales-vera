@@ -3,11 +3,11 @@
     <header class="header">
       <h2>Materiales Vera - Panel de Control</h2>
       <div class="nav-menu">
-        <span class="user-tag">👤 {{ nombreUsuario }} [<strong>{{ rolUsuario }}</strong>]</span>
+        <span class="user-tag">{{ nombreUsuario }} [<strong>{{ rolUsuario }}</strong>]</span>
         <div v-if="rolUsuario === 'Admin'" class="admin-buttons">
-          <button @click="router.push('/dashboard')" class="btn-nav activo">🏠 Inicio</button>
-          <button @click="router.push('/vehiculos')" class="btn-nav">🚚 Vehículos</button>
-          <button @click="router.push('/colaboradores')" class="btn-nav">👥 Trabajadores</button>
+          <button @click="router.push('/dashboard')" class="btn-nav activo">Inicio</button>
+          <button @click="router.push('/vehiculos')" class="btn-nav">Vehículos</button>
+          <button @click="router.push('/colaboradores')" class="btn-nav">Trabajadores</button>
         </div>
         <button @click="cerrarSesion" class="btn-logout">Cerrar Sesión</button>
       </div>
@@ -31,11 +31,6 @@
             </div>
           </div>
         </div>
-      </section>
-
-      <section v-if="rolUsuario === 'Conductor'">
-        <h3>Mi Herramienta de Trabajo</h3>
-        <button @click="cargarMiVehiculo" class="btn-primary">Ver mi vehículo asignado</button>
       </section>
     </main>
   </div>

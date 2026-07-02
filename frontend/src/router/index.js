@@ -3,6 +3,7 @@ import LoginView from '../views/LoginView.vue';
 import DashboardView from '../views/DashboardView.vue';
 import VehiculosView from '../views/VehiculosView.vue';
 import ColaboradoresView from '../views/ColaboradoresView.vue';
+import ConductoresView from '../views/ConductorView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -10,7 +11,8 @@ const router = createRouter({
     { path: '/', name: 'login', component: LoginView },
     { path: '/dashboard', name: 'dashboard', component: DashboardView },
     { path: '/vehiculos', name: 'vehiculos', component: VehiculosView },
-    { path: '/colaboradores', name: 'colaboradores', component: ColaboradoresView }
+    { path: '/colaboradores', name: 'colaboradores', component: ColaboradoresView },
+    { path: '/conductores', name: 'conductores', component: ConductoresView }
   ]
 });
 
