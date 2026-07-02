@@ -1,18 +1,5 @@
 <template>
   <div class="dashboard-container">
-    <header class="header">
-      <h2>Materiales Vera - Panel de Control</h2>
-      <div class="nav-menu">
-        <span class="user-tag">{{ nombreUsuario }} [<strong>{{ rolUsuario }}</strong>]</span>
-        <div v-if="rolUsuario === 'Admin'" class="admin-buttons">
-          <button @click="router.push('/dashboard')" class="btn-nav activo">Inicio</button>
-          <button @click="router.push('/vehiculos')" class="btn-nav">Vehículos</button>
-          <button @click="router.push('/colaboradores')" class="btn-nav">Trabajadores</button>
-        </div>
-        <button @click="cerrarSesion" class="btn-logout">Cerrar Sesión</button>
-      </div>
-    </header>
-
     <main class="content">
       <section v-if="rolUsuario === 'Admin'">
         <div class="bienvenida-card">

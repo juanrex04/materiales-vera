@@ -84,7 +84,7 @@ app.post('/api/login', async (req, res) => {
 
     const usuario = usuarios[0];
     const contraseñaValida = await bcrypt.compare(password, usuario.password);
-    
+
     if (!contraseñaValida) return res.status(401).json({ error: 'Credenciales incorrectas.' });
 
     const token = jwt.sign(
@@ -202,7 +202,7 @@ app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res)
         WHERE fecha = CURRENT_DATE()
       ) AND estado != 'En Ruta';
     `;
-    
+
     const [vehiculos] = await pool.query(query);
     res.json(vehiculos);
   } catch (error) {
@@ -213,14 +213,14 @@ app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res)
 
 // GUARDAR CHECKLIST DE CARRO ENVIADO
 app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
-  const { 
-    vehiculo_id, luces_ok, frenos_ok, llantas_ok, 
-    aceite_agua_ok, documentos_ok, limpieza_ok, observaciones 
+  const {
+    vehiculo_id, luces_ok, frenos_ok, llantas_ok,
+    aceite_agua_ok, documentos_ok, limpieza_ok, observaciones
   } = req.body;
-  
+
   // Extraemos el ID del colaborador autenticado (el conductor)
   // Nota: Asegúrate de usar la propiedad exacta donde tu middleware de token guarda el ID (ej: req.colaborador.id o req.usuario.id)
-  const colaborador_id = req.usuario.id; 
+  const colaborador_id = req.usuario.id;
 
   // Un carro está apto si cumple con los 5 puntos críticos obligatorios de seguridad
   const apto_para_trabajar = (luces_ok && frenos_ok && llantas_ok && aceite_agua_ok && documentos_ok);
@@ -228,7 +228,7 @@ app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
   try {
     // Doble validación de seguridad: verificar que no le hayan hecho checklist hoy a ese carro
     const [existe] = await pool.query(
-      'SELECT id FROM checklists_diarios WHERE vehiculo_id = ? AND fecha = CURRENT_DATE()', 
+      'SELECT id FROM checklists_diarios WHERE vehiculo_id = ? AND fecha = CURRENT_DATE()',
       [vehiculo_id]
     );
 
@@ -242,7 +242,7 @@ app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
       (vehiculo_id, colaborador_id, luces_ok, frenos_ok, llantas_ok, aceite_agua_ok, documentos_ok, limpieza_ok, observaciones, apto_para_trabajar)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    
+
     await pool.query(insertQuery, [
       vehiculo_id, colaborador_id, luces_ok, frenos_ok, llantas_ok, aceite_agua_ok, documentos_ok, limpieza_ok, observaciones, apto_para_trabajar
     ]);
@@ -252,15 +252,48 @@ app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
       await db.query("UPDATE vehiculos SET estado = 'Mantenimiento' WHERE id = ?", [vehiculo_id]);
     }
 
-    res.json({ 
-      success: true, 
-      message: 'Checklist guardado con éxito.', 
-      apto: apto_para_trabajar 
+    res.json({
+      success: true,
+      message: 'Checklist guardado con éxito.',
+      apto: apto_para_trabajar
     });
 
   } catch (error) {
     console.error('Error al insertar checklist:', error);
     res.status(500).json({ error: 'Error interno al guardar la inspección.' });
+  }
+});
+
+// Obtener el historial de checklists para la vista de admin
+app.get('/api/admin/checklists', verificarToken, async (req, res) => {
+  
+  const esAdmin = (req, res, next) => {
+    if (req.usuario && req.usuario.rol === 'Admin') {
+      next();
+    } else {
+      res.status(403).json({ error: 'Acceso denegado. Se requiere perfil de Administrador.' });
+    }
+  };
+
+  try {
+    const query = `
+      SELECT 
+        c.id, DATE_FORMAT(c.fecha, '%Y-%m-%d') as fecha, c.hora, 
+        c.luces_ok, c.frenos_ok, c.llantas_ok, c.aceite_agua_ok, c.documentos_ok, c.limpieza_ok,
+        c.observaciones, c.apto_para_trabajar,
+        v.placa, v.marca,
+        col.nombre AS conductor
+      FROM checklists_diarios c
+      JOIN vehiculos v ON c.vehiculo_id = v.id
+      JOIN colaboradores col ON c.colaborador_id = col.id
+      ORDER BY c.fecha DESC, c.hora DESC
+    `;
+
+    const [checklists] = await pool.query(query);
+    res.json(checklists);
+  } catch (error) {
+    console.error('Error al obtener checklists:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 

@@ -1,18 +1,5 @@
 <template>
     <div class="dashboard-container">
-        <header class="header">
-            <h2>Materiales Vera - Personal</h2>
-            <div class="nav-menu">
-                <span class="user-tag">👤 {{ nombreUsuario }} [<strong>{{ rolUsuario }}</strong>]</span>
-                <div class="admin-buttons">
-                    <button @click="router.push('/dashboard')" class="btn-nav">🏠 Inicio</button>
-                    <button @click="router.push('/vehiculos')" class="btn-nav">🚚 Vehículos</button>
-                    <button @click="router.push('/colaboradores')" class="btn-nav activo">👥 Trabajadores</button>
-                </div>
-                <button @click="cerrarSesion" class="btn-logout">Cerrar Sesión</button>
-            </div>
-        </header>
-
         <main class="content">
             <div class="gestion-seccion">
                 <div class="titulo-acciones">

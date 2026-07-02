@@ -1,16 +1,5 @@
 <template>
   <div class="dashboard-container">
-    <header class="header">
-      <h2>Materiales Vera - Portal Conductor</h2>
-      <div class="nav-menu">
-        <span class="user-tag">👤 {{ nombreUsuario }} [<strong>{{ rolUsuario }}</strong>]</span>
-        <div class="admin-buttons">
-          <button class="btn-nav activo">📋 Mi Checklist</button>
-        </div>
-        <button @click="cerrarSesion" class="btn-logout">Cerrar Sesión</button>
-      </div>
-    </header>
-
     <main class="content">
       <div class="bienvenida-card">
         <h3>¡Buen día, {{ nombreUsuario }}!</h3>

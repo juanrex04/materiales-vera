@@ -118,6 +118,12 @@ body {
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
   cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-secondary:hover {
+  background-color: #475569;
+  color: white;
 }
 
 .btn-edit {
@@ -406,8 +412,16 @@ select {
 }
 
 /* ========================================================
-   8. Diseño de los ítems del checklist tipo Tarjeta interactiva 
+   8. Diseño de los ítems del checklist
    ======================================================== */
+.item-revision {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  border-bottom: 1px dashed #cbd5e1;
+  font-size: 0.95rem;
+}
+
 .checklist-item {
   display: flex;
   align-items: center;
@@ -470,4 +484,11 @@ select {
   .btn-primary {
     width: 100%;
   }
+}
+
+/* Los router-link son etiquetas <a> por defecto, esto asegura que parezcan botones y no texto subrayado */
+a.btn-nav {
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
 }
