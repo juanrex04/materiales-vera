@@ -4,7 +4,7 @@
             <div class="gestion-seccion">
                 <div class="titulo-acciones">
                     <h3>Listado de Colaboradores</h3>
-                    <button @click="abrirModalNuevo" class="btn-primary">➕ Nuevo Colaborador</button>
+                    <button @click="abrirModalNuevo" class="btn-primary">Nuevo Colaborador</button>
                 </div>
 
                 <div class="tabla-contenedor">

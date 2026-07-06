@@ -213,23 +213,20 @@ app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res)
 
 // GUARDAR CHECKLIST DE CARRO ENVIADO
 app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
-  const {
-    vehiculo_id, luces_ok, frenos_ok, llantas_ok,
-    aceite_agua_ok, documentos_ok, limpieza_ok, observaciones
-  } = req.body;
+  const data = req.body;
 
   // Extraemos el ID del colaborador autenticado (el conductor)
   // Nota: Asegúrate de usar la propiedad exacta donde tu middleware de token guarda el ID (ej: req.colaborador.id o req.usuario.id)
   const colaborador_id = req.usuario.id;
 
   // Un carro está apto si cumple con los 5 puntos críticos obligatorios de seguridad
-  const apto_para_trabajar = (luces_ok && frenos_ok && llantas_ok && aceite_agua_ok && documentos_ok);
+  const apto_para_trabajar = (data.freno_servicio && data.freno_emergencia && data.llantas_estado);
 
   try {
     // Doble validación de seguridad: verificar que no le hayan hecho checklist hoy a ese carro
     const [existe] = await pool.query(
       'SELECT id FROM checklists_diarios WHERE vehiculo_id = ? AND fecha = CURRENT_DATE()',
-      [vehiculo_id]
+      [data.vehiculo_id]
     );
 
     if (existe.length > 0) {
@@ -238,18 +235,32 @@ app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
 
     // Insertar el nuevo registro en la base de datos
     const insertQuery = `
-      INSERT INTO checklists_diarios 
-      (vehiculo_id, colaborador_id, luces_ok, frenos_ok, llantas_ok, aceite_agua_ok, documentos_ok, limpieza_ok, observaciones, apto_para_trabajar)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+      INSERT INTO checklists_diarios (
+    vehiculo_id, colaborador_id, luces_frontales, luces_traseras, direccionales_delanteras, direccionales_traseras, 
+    espejos_laterales, alarma_retroceso, pito, freno_servicio, freno_emergencia, direccion_suspension, 
+    cinturon_seguridad, vidrio_frontal, limpia_brisas, silleteria, indicadores_tablero, baterias_cables, 
+    presion_aire, llantas_estado, fugas_hidraulicas, pasadores_suspension, fugas_aire, grapas_chasis, 
+    cadena_cardan, acoples_rapidos, mangueras, estado_volco, soporte_volco, tanque_combustible, motor, 
+    sistema_cargado, ganchos_compuerta, soportes_buge, documentos, gato, cruceta, taco, caja_herramientas, 
+    llanta_repuesto, linterna, senales_carretera, botiquin, extintor, observaciones, apto_para_trabajar
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
 
-    await pool.query(insertQuery, [
-      vehiculo_id, colaborador_id, luces_ok, frenos_ok, llantas_ok, aceite_agua_ok, documentos_ok, limpieza_ok, observaciones, apto_para_trabajar
-    ]);
+    const values = [
+      data.vehiculo_id, colaborador_id, data.luces_frontales, data.luces_traseras, data.direccionales_delanteras, data.direccionales_traseras,
+      data.espejos_laterales, data.alarma_retroceso, data.pito, data.freno_servicio, data.freno_emergencia, data.direccion_suspension,
+      data.cinturon_seguridad, data.vidrio_frontal, data.limpia_brisas, data.silleteria, data.indicadores_tablero, data.baterias_cables,
+      data.presion_aire, data.llantas_estado, data.fugas_hidraulicas, data.pasadores_suspension, data.fugas_aire, data.grapas_chasis,
+      data.cadena_cardan, data.acoples_rapidos, data.mangueras, data.estado_volco, data.soporte_volco, data.tanque_combustible, data.motor,
+      data.sistema_cargado, data.ganchos_compuerta, data.soportes_buge, data.documentos, data.gato, data.cruceta, data.taco, data.caja_herramientas,
+      data.llanta_repuesto, data.linterna, data.senales_carretera, data.botiquin, data.extintor, data.observaciones, apto_para_trabajar
+    ];
+
+    await pool.query(insertQuery, values);
 
     // Si el vehículo NO está apto, automáticamente le cambiamos el estado a 'Mantenimiento' para alertar al administrador
     if (!apto_para_trabajar) {
-      await db.query("UPDATE vehiculos SET estado = 'Mantenimiento' WHERE id = ?", [vehiculo_id]);
+      await pool.query("UPDATE vehiculos SET estado = 'Mantenimiento' WHERE id = ?", [vehiculo_id]);
     }
 
     res.json({
@@ -265,22 +276,13 @@ app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
 });
 
 // Obtener el historial de checklists para la vista de admin
+// Obtener el historial de checklists (Vista Administrador)
 app.get('/api/admin/checklists', verificarToken, async (req, res) => {
-  
-  const esAdmin = (req, res, next) => {
-    if (req.usuario && req.usuario.rol === 'Admin') {
-      next();
-    } else {
-      res.status(403).json({ error: 'Acceso denegado. Se requiere perfil de Administrador.' });
-    }
-  };
-
   try {
     const query = `
       SELECT 
-        c.id, DATE_FORMAT(c.fecha, '%Y-%m-%d') as fecha, c.hora, 
-        c.luces_ok, c.frenos_ok, c.llantas_ok, c.aceite_agua_ok, c.documentos_ok, c.limpieza_ok,
-        c.observaciones, c.apto_para_trabajar,
+        c.*, 
+        DATE_FORMAT(c.fecha, '%Y-%m-%d') as fecha_formateada,
         v.placa, v.marca,
         col.nombre AS conductor
       FROM checklists_diarios c
@@ -288,8 +290,9 @@ app.get('/api/admin/checklists', verificarToken, async (req, res) => {
       JOIN colaboradores col ON c.colaborador_id = col.id
       ORDER BY c.fecha DESC, c.hora DESC
     `;
-
-    const [checklists] = await pool.query(query);
+    
+    // Recuerda usar pool.query o conexion.query, según como lo tengas configurado
+    const [checklists] = await pool.query(query); 
     res.json(checklists);
   } catch (error) {
     console.error('Error al obtener checklists:', error);
