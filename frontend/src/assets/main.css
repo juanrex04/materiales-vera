@@ -443,7 +443,9 @@ select {
   height: 24px;
   margin-right: 1.5rem;
   cursor: pointer;
-  accent-color: var(--primary-blue); /* Pinta el cuadrito de azul cuando se marca */
+  accent-color: var(
+    --primary-blue
+  ); /* Pinta el cuadrito de azul cuando se marca */
 }
 
 .item-info {
@@ -595,9 +597,15 @@ select {
   padding-bottom: 1rem;
   margin-bottom: 1rem;
 }
-.modal-header h3 { margin: 0; }
+.modal-header h3 {
+  margin: 0;
+}
 .btn-close {
-  background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #64748b;
 }
 
 .scroll-area {
@@ -616,7 +624,10 @@ select {
   border: 1px solid var(--border-color);
   margin-bottom: 1.5rem;
 }
-.info-resumen p { margin: 0; font-size: 0.95rem; }
+.info-resumen p {
+  margin: 0;
+  font-size: 0.95rem;
+}
 
 .observaciones-caja {
   background: #fffbeb;
@@ -625,7 +636,10 @@ select {
   border-radius: 6px;
   margin-bottom: 1.5rem;
 }
-.observaciones-caja p { margin: 0.5rem 0 0 0; color: #92400e; }
+.observaciones-caja p {
+  margin: 0.5rem 0 0 0;
+  color: #92400e;
+}
 
 /* Grilla de 4 columnas para el checklist */
 .grid-categorias {
@@ -668,6 +682,100 @@ select {
 .categoria-tarjeta li:last-child {
   border-bottom: none;
 }
+/* ESTILOS DEL PANEL DE FILTROS Y GRILLA (Se mantienen) */
+.input-busqueda {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+.btn-limpiar-container {
+  flex: 0;
+  white-space: nowrap;
+}
+
+/* Modal */
+.modal-largo {
+  max-width: 950px !important;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem !important;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #64748b;
+}
+.scroll-area {
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+/* Grilla y tarjetas */
+.info-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+}
+.observaciones-caja {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+}
+.grid-categorias {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.categoria-tarjeta {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.categoria-tarjeta h4 {
+  background: #e2e8f0;
+  margin: 0;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+.categoria-tarjeta ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.categoria-tarjeta li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.8rem;
+}
+.categoria-tarjeta li.falla {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  font-weight: 500;
+}
 
 /* Resalta en rojo tenue las fallas para que el admin las vea rápido */
 .categoria-tarjeta li.falla {
@@ -678,7 +786,7 @@ select {
 
 /* Los router-link son etiquetas <a> por defecto, esto asegura que parezcan botones y no texto subrayado */
 a.btn-nav {
-    text-decoration: none;
-    display: inline-block;
-    text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
 }

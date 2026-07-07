@@ -194,7 +194,7 @@ app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res)
   try {
     // Traemos los carros que NO tienen un checklist registrado con la fecha del día de hoy
     const query = `
-      SELECT id, placa, marca, estado 
+      SELECT id, placa, marca, estado, DATE_FORMAT(fecha_soat, '%Y-%m-%d') as fecha_soat, DATE_FORMAT(fecha_tecnomecanica, '%Y-%m-%d') as fecha_tecnomecanica
       FROM vehiculos 
       WHERE id NOT IN (
         SELECT vehiculo_id 
@@ -290,9 +290,9 @@ app.get('/api/admin/checklists', verificarToken, async (req, res) => {
       JOIN colaboradores col ON c.colaborador_id = col.id
       ORDER BY c.fecha DESC, c.hora DESC
     `;
-    
+
     // Recuerda usar pool.query o conexion.query, según como lo tengas configurado
-    const [checklists] = await pool.query(query); 
+    const [checklists] = await pool.query(query);
     res.json(checklists);
   } catch (error) {
     console.error('Error al obtener checklists:', error);
