@@ -276,14 +276,14 @@ app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
 });
 
 // Obtener el historial de checklists para la vista de admin
-// Obtener el historial de checklists (Vista Administrador)
 app.get('/api/admin/checklists', verificarToken, async (req, res) => {
   try {
     const query = `
       SELECT 
         c.*, 
         DATE_FORMAT(c.fecha, '%Y-%m-%d') as fecha_formateada,
-        v.placa, v.marca,
+        v.placa, v.marca, 
+        v.fecha_soat, v.fecha_tecnomecanica, 
         col.nombre AS conductor
       FROM checklists_diarios c
       JOIN vehiculos v ON c.vehiculo_id = v.id
