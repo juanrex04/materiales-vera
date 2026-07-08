@@ -25,8 +25,8 @@
                                 <td><span :class="['badge-rol', c.rol.toLowerCase()]">{{ c.rol }}</span></td>
                                 <td>{{ c.licencia_conducir || 'No Aplica' }}</td>
                                 <td>
-                                    <button @click="abrirModalEditar(c)" class="btn-edit">✏️ Editar</button>
-                                    <button @click="eliminarColaborador(c.id)" class="btn-delete">🗑️ Eliminar</button>
+                                    <button @click="abrirModalEditar(c)" class="btn-edit">Editar</button>
+                                    <button @click="eliminarColaborador(c.id)" class="btn-delete">Eliminar</button>
                                 </td>
                             </tr>
                         </tbody>

@@ -1,8 +1,13 @@
 <template>
     <header class="header">
         <h2>Materiales Vera - Portal</h2>
-        <div class="nav-menu">
-            <span class="user-tag">{{ nombreUsuario }} [<strong>{{ rolUsuario }}</strong>]</span>
+        
+        <button class="hamburger" @click="menuAbierto = !menuAbierto">
+            {{ menuAbierto ? '✖' : '☰' }}
+        </button>
+
+        <div class="nav-menu" :class="{ 'nav-active': menuAbierto }" @click="menuAbierto = false">
+            <span class="user-tag">{{ nombreUsuario }}</span>
 
             <div v-if="rolUsuario === 'Admin'" class="admin-buttons">
                 <router-link to="/dashboard" class="btn-nav" active-class="activo">
@@ -21,13 +26,6 @@
                     Verificar Checklist
                 </router-link>
             </div>
-
-            <div v-if="rolUsuario === 'Conductor'" class="admin-buttons">
-                <router-link to="/conductor" class="btn-nav" active-class="activo">
-                    📋 Mi Checklist
-                </router-link>
-            </div>
-
             <button @click="cerrarSesion" class="btn-logout">Cerrar Sesión</button>
         </div>
     </header>
@@ -35,9 +33,10 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router'; // Ya no importamos useRoute
+import { useRouter } from 'vue-router';
 
 const router = useRouter();
+const menuAbierto = ref(false);
 
 const nombreUsuario = ref(localStorage.getItem('nombre') || 'Usuario');
 const rolUsuario = ref(localStorage.getItem('rol') || '');

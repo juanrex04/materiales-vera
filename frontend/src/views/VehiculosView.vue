@@ -4,7 +4,7 @@
             <div class="gestion-seccion">
                 <div class="titulo-acciones">
                     <h3>Listado General de Vehículos</h3>
-                    <button @click="abrirModalNuevo" class="btn-primary">➕ Registrar Vehículo</button>
+                    <button @click="abrirModalNuevo" class="btn-primary">Registrar Vehículo</button>
                 </div>
 
                 <div class="tabla-contenedor">

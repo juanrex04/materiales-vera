@@ -1,6 +1,9 @@
 <template>
   <div class="dashboard-container">
     <div class="content">
+      <div class="bienvenida-card">
+        <p>Recuerda que para crear un PDF de reporte semanal debes llenar los filtros de acuerdo con lo que necesitas; y al no seleccionar vehiculo y solo fechas será algo general el reporte.</p>
+      </div>
       <div class="gestion-seccion">
         <div class="titulo-acciones">
           <h2>Control de Inspecciones (Volquetas)</h2>
@@ -33,7 +36,7 @@
           </div>
 
           <div class="acciones-filtros">
-            <button @click="limpiarFiltros" class="btn-delete">
+            <button @click="limpiarFiltros" class="btn-edit">
               Limpiar
             </button>
             <button @click="generarPDFSemanal" class="btn-primary">
@@ -56,7 +59,7 @@
             <tbody>
               <tr v-for="chk in checklistsFiltrados" :key="chk.id">
                 <td>
-                  <strong>{{ chk.fecha_formateada }}</strong><br>
+                  <strong>{{ formatearFecha(chk.fecha_formateada) }}</strong><br>
                   <small class="text-muted">{{ chk.hora }}</small>
                 </td>
                 <td>{{ chk.conductor }}</td>
@@ -91,8 +94,9 @@
                 <p><strong>Conductor:</strong> {{ checklistSeleccionado.conductor }}</p>
                 <p><strong>Vehículo:</strong> {{ checklistSeleccionado.placa }} ({{ checklistSeleccionado.marca }})
                 </p>
-                <p><strong>Fecha de Revisión:</strong> {{ formatearFecha(checklistSeleccionado.fecha_formateada )}} a las {{
-                  checklistSeleccionado.hora }}</p>
+                <p><strong>Fecha de Revisión:</strong> {{ formatearFecha(checklistSeleccionado.fecha_formateada) }} a
+                  las {{
+                    checklistSeleccionado.hora }}</p>
                 <p><strong>Resultado:</strong>
                   <span
                     :style="{ color: checklistSeleccionado.apto_para_trabajar ? '#16a34a' : '#dc2626', fontWeight: 'bold' }">
@@ -246,7 +250,7 @@
             <td style="padding: 5px; width: 50%;"><strong>PLACA DEL VEHÍCULO:</strong> {{ placaPDF }}</td>
             <td style="padding: 5px; width: 50%;"><strong>FECHA (Semana):</strong> {{
               formatearFecha(filtros.fechaInicio)
-              }} al {{ formatearFecha(filtros.fechaFin) }}</td>
+            }} al {{ formatearFecha(filtros.fechaFin) }}</td>
           </tr>
           <tr>
             <td style="padding: 5px;"><strong>SOAT Vence:</strong> {{ fechaSoatPDF }}</td>
@@ -327,7 +331,7 @@ const filtros = ref({
 
 const formatearFecha = (fecha) => {
   if (!fecha) return 'No registrada';
-  
+
   // Se convierte a texto y quitamos la hora si viene formato ISO (ej. 2026-07-05T00:00:00Z)
   const fechaTexto = String(fecha).split('T')[0];
   const partes = fechaTexto.split('-');
@@ -341,12 +345,12 @@ const formatearFecha = (fecha) => {
   if (partes.length !== 3) return fechaTexto;
 
   const meses = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
-  
+
   const dia = partes[2];
-  const mes = meses[parseInt(partes[1]) - 1]; 
+  const mes = meses[parseInt(partes[1]) - 1];
   const anio = partes[0];
 
   // Si por alguna razón el mes es inválido, mostramos la fecha original para que no se rompa
@@ -511,7 +515,7 @@ const obtenerValorMatriz = (llavePropiedad, numeroDia) => {
   });
 
   if (!reporteDelDia) return '';
-  return reporteDelDia[llavePropiedad] ? '✅' : '❌';
+  return reporteDelDia[llavePropiedad] ? 'OK' : 'ERROR';
 };
 
 //FUNCIONES DE INTERFAZ Y DESCARGA
@@ -558,5 +562,5 @@ const cerrarModal = () => {
   checklistSeleccionado.value = null;
 };
 
-const icon = (valor) => valor ? '✅' : '❌';
+const icon = (valor) => valor ? 'OK' : 'ERROR';
 </script>
