@@ -790,3 +790,17 @@ a.btn-nav {
   display: inline-block;
   text-align: center;
 }
+
+/*botones checklist admin*/
+/* Contenedor para alinear los botones de los filtros */
+.acciones-filtros {
+  display: flex;
+  gap: 15px; /* Espacio entre los botones */
+  align-items: center; /* Los centra verticalmente */
+  margin-top: 10px; /* Un pequeño respiro en la parte superior si es necesario */
+}
+
+/* Opcional: Si quieres que los botones tengan la misma altura */
+.acciones-filtros button {
+  height: 100%;
+}

@@ -32,7 +32,7 @@
             </select>
           </div>
 
-          <div class="filtro-item btn-limpiar-container">
+          <div class="acciones-filtros">
             <button @click="limpiarFiltros" class="btn-delete">
               Limpiar
             </button>
@@ -91,7 +91,7 @@
                 <p><strong>Conductor:</strong> {{ checklistSeleccionado.conductor }}</p>
                 <p><strong>Vehículo:</strong> {{ checklistSeleccionado.placa }} ({{ checklistSeleccionado.marca }})
                 </p>
-                <p><strong>Fecha de Revisión:</strong> {{ checklistSeleccionado.fecha_formateada }} a las {{
+                <p><strong>Fecha de Revisión:</strong> {{ formatearFecha(checklistSeleccionado.fecha_formateada )}} a las {{
                   checklistSeleccionado.hora }}</p>
                 <p><strong>Resultado:</strong>
                   <span
@@ -233,91 +233,159 @@
   </div>
 
   <div style="display: none;">
-      <div id="matriz-pdf" style="padding: 20px; font-family: Arial, sans-serif; font-size: 10px; color: black;">
-        
-        <div style="text-align: center; margin-bottom: 10px;">
-          <h2 style="margin: 0;">INSPECCIÓN PREOPERACIONAL VEHÍCULOS (VOLQUETAS)</h2>
-          <h3 style="margin: 5px 0;">VERA S.A.S</h3>
-        </div>
+    <div id="matriz-pdf" style="padding: 20px; font-family: Arial, sans-serif; font-size: 10px; color: black;">
 
-        <table border="1" style="width: 100%; border-collapse: collapse; margin-bottom: 10px; text-align: left;">
+      <div style="text-align: center; margin-bottom: 10px;">
+        <h2 style="margin: 0;">INSPECCIÓN PREOPERACIONAL VEHÍCULOS (VOLQUETAS)</h2>
+        <h3 style="margin: 5px 0;">VERA S.A.S</h3>
+      </div>
+
+      <table border="1" style="width: 100%; border-collapse: collapse; margin-bottom: 10px; text-align: left;">
+        <tbody>
           <tr>
-            <td style="padding: 5px; width: 50%;"><strong>PLACA DEL VEHÍCULO:</strong> {{ filtros.texto ? filtros.texto.toUpperCase() : 'Todas (Filtre por placa)' }}</td>
-            <td style="padding: 5px; width: 50%;"><strong>FECHA (Semana):</strong> {{ formatearFecha(filtros.fechaInicio) }} al {{ formatearFecha(filtros.fechaFin) }}</td>
+            <td style="padding: 5px; width: 50%;"><strong>PLACA DEL VEHÍCULO:</strong> {{ placaPDF }}</td>
+            <td style="padding: 5px; width: 50%;"><strong>FECHA (Semana):</strong> {{
+              formatearFecha(filtros.fechaInicio)
+              }} al {{ formatearFecha(filtros.fechaFin) }}</td>
           </tr>
           <tr>
             <td style="padding: 5px;"><strong>SOAT Vence:</strong> {{ fechaSoatPDF }}</td>
             <td style="padding: 5px;"><strong>TECNOMECÁNICA Vence:</strong> {{ fechaTecnoPDF }}</td>
           </tr>
-        </table>
+        </tbody>
+      </table>
 
-        <table border="1" style="width: 100%; border-collapse: collapse; text-align: center; font-size: 9px;">
-          <thead style="background-color: #e2e8f0;">
-            <tr>
-              <th style="padding: 5px; width: 10%;">ITEM</th>
-              <th style="padding: 5px; width: 34%;">CONCEPTO</th>
-              <th style="width: 8%;">LUNES</th>
-              <th style="width: 8%;">MARTES</th>
-              <th style="width: 8%;">MIÉRCOLES</th>
-              <th style="width: 8%;">JUEVES</th>
-              <th style="width: 8%;">VIERNES</th>
-              <th style="width: 8%;">SÁBADO</th>
-              <th style="width: 8%;">DOMINGO</th>
+      <table border="1" style="width: 100%; border-collapse: collapse; text-align: center; font-size: 9px;">
+        <thead style="background-color: #e2e8f0;">
+          <tr>
+            <th style="padding: 5px; width: 10%;">ITEM</th>
+            <th style="padding: 5px; width: 34%;">CONCEPTO</th>
+            <th style="width: 8%;">LUNES</th>
+            <th style="width: 8%;">MARTES</th>
+            <th style="width: 8%;">MIÉRCOLES</th>
+            <th style="width: 8%;">JUEVES</th>
+            <th style="width: 8%;">VIERNES</th>
+            <th style="width: 8%;">SÁBADO</th>
+            <th style="width: 8%;">DOMINGO</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template v-for="cat in categoriasRevision" :key="cat.titulo">
+            <tr v-for="(item, index) in cat.items" :key="item.key">
+              <td v-if="index === 0" :rowspan="cat.items.length" style="font-weight: bold; vertical-align: middle;">
+                {{ cat.titulo }}
+              </td>
+              <td style="text-align: center; padding: 3px;">
+                {{ item.label }}
+              </td>
+              <td v-for="dia in 7" :key="dia">
+                {{ obtenerValorMatriz(item.key, dia) }}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            <template v-for="cat in categoriasRevision" :key="cat.titulo">
-              <tr v-for="(item, index) in cat.items" :key="item.key">
-                <td v-if="index === 0" :rowspan="cat.items.length" style="font-weight: bold; vertical-align: middle;">{{ cat.titulo }}</td>
-                <td style="text-align: left; padding: 4px;">{{ item.label }}</td>
-                <td v-for="dia in 7" :key="dia">{{ obtenerValorMatriz(item.key, dia) }}</td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
+          </template>
+        </tbody>
+      </table>
 
-        <div style="margin-top: 15px;">
-          <strong>Observaciones de la Semana:</strong>
-          <div style="min-height: 40px; border: 1px solid #ccc; padding: 5px; margin-top: 5px;">
-            <p v-for="chk in checklistsFiltrados" :key="'obs'+chk.id" style="font-size: 9px; margin: 2px 0;">
-              <span v-if="chk.observaciones"><strong>{{ formatearFecha(chk.fecha_formateada) }}:</strong> {{ chk.observaciones }}</span>
-            </p>
-          </div>
+      <div style="margin-top: 15px;">
+        <strong>Observaciones de la Semana:</strong>
+        <div style="min-height: 40px; border: 1px solid #ccc; padding: 5px; margin-top: 5px;">
+          <p v-for="chk in checklistsFiltrados" :key="'obs' + chk.id" style="font-size: 9px; margin: 2px 0;">
+            <span v-if="chk.observaciones"><strong>{{ formatearFecha(chk.fecha_formateada) }}:</strong> {{
+              chk.observaciones }}</span>
+          </p>
         </div>
-
-        <div style="margin-top: 40px; display: flex; justify-content: space-between;">
-          <div style="width: 45%; border-top: 1px solid black; padding-top: 5px;">
-            <strong>Realizado Por (Nombre):</strong><br>
-            {{ conductorFrecuentePDF }}
-          </div>
-          <div style="width: 45%; border-top: 1px solid black; padding-top: 5px;">
-            <strong>Firma del Conductor Con Cédula:</strong>
-          </div>
-        </div>
-
       </div>
+
+      <div style="margin-top: 40px; display: flex; justify-content: space-between;">
+        <div style="width: 45%; border-top: 1px solid black; padding-top: 5px;">
+          <strong>Realizado Por (Nombre):</strong><br>
+          {{ conductorFrecuentePDF }}
+        </div>
+        <div style="width: 45%; border-top: 1px solid black; padding-top: 5px;">
+          <strong>Firma del Conductor Con Cédula:</strong>
+        </div>
+      </div>
+
     </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import html2pdf from 'html2pdf.js'; // Importamos la magia de los PDFs
+import html2pdf from 'html2pdf.js';
 
 const listaChecklists = ref([]);
 const modalVisible = ref(false);
 const checklistSeleccionado = ref(null);
-// ... (Tus imports, refs y funciones de cargarChecklists se mantienen igual) ...
 
-// Función para poner la fecha bonita
+const filtros = ref({
+  texto: '',
+  fechaInicio: '',
+  fechaFin: '',
+  estado: 'todos'
+});
+
 const formatearFecha = (fecha) => {
-  if (!fecha) return 'No registrada / Seleccione Rango';
-  const partes = fecha.split('-');
-  if (partes.length !== 3) return fecha;
-  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  return `${partes[2]} de ${meses[parseInt(partes[1]) - 1]} de ${partes[0]}`;
+  if (!fecha) return 'No registrada';
+  
+  // Se convierte a texto y quitamos la hora si viene formato ISO (ej. 2026-07-05T00:00:00Z)
+  const fechaTexto = String(fecha).split('T')[0];
+  const partes = fechaTexto.split('-');
+
+  //DETECCIÓN DEL ERROR: Si la base de datos guardó la palabra "undefined" o está vacía
+  if (partes.includes('undefined') || partes.includes('null') || partes.includes('')) {
+    return 'Fecha corrupta (Actualizar vehículo)';
+  }
+
+  //Valido que tenga las 3 partes (Año, Mes, Día)
+  if (partes.length !== 3) return fechaTexto;
+
+  const meses = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+  
+  const dia = partes[2];
+  const mes = meses[parseInt(partes[1]) - 1]; 
+  const anio = partes[0];
+
+  // Si por alguna razón el mes es inválido, mostramos la fecha original para que no se rompa
+  if (!mes) return fechaTexto;
+
+  return `${dia} de ${mes} de ${anio}`;
 };
 
-// Computadas para sacar datos dinámicos para el PDF basado en los filtros
+// LÓGICA DE FILTRADO
+const checklistsFiltrados = computed(() => {
+  return listaChecklists.value.filter((chk) => {
+    const termino = filtros.value.texto.toLowerCase();
+    const coincideTexto = chk.conductor.toLowerCase().includes(termino) || chk.placa.toLowerCase().includes(termino);
+
+    let coincideFecha = true;
+    if (filtros.value.fechaInicio) {
+      coincideFecha = coincideFecha && (chk.fecha_formateada >= filtros.value.fechaInicio);
+    }
+    if (filtros.value.fechaFin) {
+      coincideFecha = coincideFecha && (chk.fecha_formateada <= filtros.value.fechaFin);
+    }
+
+    let coincideEstado = true;
+    if (filtros.value.estado === 'apto') coincideEstado = chk.apto_para_trabajar;
+    if (filtros.value.estado === 'falla') coincideEstado = !chk.apto_para_trabajar;
+
+    return coincideTexto && coincideFecha && coincideEstado;
+  });
+});
+
+//VARIABLES DEL PDF (Que dependen de los filtros)
+const placaPDF = computed(() => {
+  // Si hay reportes filtrados, tomamos la placa real del primer registro
+  if (checklistsFiltrados.value.length > 0 && checklistsFiltrados.value[0].placa) {
+    return checklistsFiltrados.value[0].placa.toUpperCase();
+  }
+  return 'Todas (Filtre por placa)';
+});
+
 const fechaSoatPDF = computed(() => {
   if (checklistsFiltrados.value.length > 0 && checklistsFiltrados.value[0].fecha_soat) {
     return formatearFecha(checklistsFiltrados.value[0].fecha_soat);
@@ -332,7 +400,6 @@ const fechaTecnoPDF = computed(() => {
   return 'N/A';
 });
 
-// Busca el nombre del conductor que hizo el último checklist de esa semana
 const conductorFrecuentePDF = computed(() => {
   if (checklistsFiltrados.value.length > 0) {
     return checklistsFiltrados.value[0].conductor;
@@ -340,7 +407,32 @@ const conductorFrecuentePDF = computed(() => {
   return '';
 });
 
-// ESTRUCTURA DESGLOSADA IDÉNTICA AL PDF FÍSICO
+// CARGA DE DATOS
+onMounted(() => {
+  cargarChecklists();
+});
+
+const cargarChecklists = async () => {
+  try {
+    const res = await fetch('http://localhost:3000/api/admin/checklists', {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    if (res.ok) {
+      listaChecklists.value = await res.json();
+    }
+  } catch (error) {
+    console.error('Fallo la conexión con el servidor', error);
+  }
+};
+
+const limpiarFiltros = () => {
+  filtros.value.texto = '';
+  filtros.value.fechaInicio = '';
+  filtros.value.fechaFin = '';
+  filtros.value.estado = 'todos';
+};
+
+//ESTRUCTURA DESGLOSADA DEL PDF SEMANAL
 const categoriasRevision = [
   {
     titulo: 'LUCES',
@@ -412,8 +504,8 @@ const categoriasRevision = [
 
 const obtenerValorMatriz = (llavePropiedad, numeroDia) => {
   const reporteDelDia = checklistsFiltrados.value.find(chk => {
-    let fechaObj = new Date(chk.fecha_formateada + 'T12:00:00'); 
-    let diaSemana = fechaObj.getDay(); 
+    let fechaObj = new Date(chk.fecha_formateada + 'T12:00:00');
+    let diaSemana = fechaObj.getDay();
     let diaAdaptado = diaSemana === 0 ? 7 : diaSemana;
     return diaAdaptado === numeroDia;
   });
@@ -421,86 +513,8 @@ const obtenerValorMatriz = (llavePropiedad, numeroDia) => {
   if (!reporteDelDia) return '';
   return reporteDelDia[llavePropiedad] ? '✅' : '❌';
 };
-// Variables reactivas (Modificadas para rango de fecha)
-const filtros = ref({
-  texto: '',
-  fechaInicio: '',
-  fechaFin: '',
-  estado: 'todos'
-});
 
-
-
-onMounted(() => {
-  cargarChecklists();
-});
-
-const cargarChecklists = async () => {
-  try {
-    const res = await fetch('http://localhost:3000/api/admin/checklists', {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    });
-    if (res.ok) {
-      listaChecklists.value = await res.json();
-    }
-  } catch (error) {
-    console.error('Fallo la conexión con el servidor', error);
-  }
-};
-
-// ========================================================
-// LÓGICA DE FILTRADO (RANGO DE FECHAS)
-// ========================================================
-const checklistsFiltrados = computed(() => {
-  return listaChecklists.value.filter((chk) => {
-
-    // 1. Filtro Texto
-    const termino = filtros.value.texto.toLowerCase();
-    const coincideTexto = chk.conductor.toLowerCase().includes(termino) || chk.placa.toLowerCase().includes(termino);
-
-    // 2. Filtro Rango de Fechas (YYYY-MM-DD se puede comparar directamente en texto)
-    let coincideFecha = true;
-    if (filtros.value.fechaInicio) {
-      coincideFecha = coincideFecha && (chk.fecha_formateada >= filtros.value.fechaInicio);
-    }
-    if (filtros.value.fechaFin) {
-      coincideFecha = coincideFecha && (chk.fecha_formateada <= filtros.value.fechaFin);
-    }
-
-    // 3. Filtro Estado
-    let coincideEstado = true;
-    if (filtros.value.estado === 'apto') coincideEstado = chk.apto_para_trabajar;
-    if (filtros.value.estado === 'falla') coincideEstado = !chk.apto_para_trabajar;
-
-    return coincideTexto && coincideFecha && coincideEstado;
-  });
-});
-
-const limpiarFiltros = () => {
-  filtros.value.texto = '';
-  filtros.value.fechaInicio = '';
-  filtros.value.fechaFin = '';
-  filtros.value.estado = 'todos';
-};
-
-// ========================================================
-// GENERACIÓN DE PDF
-// ========================================================
-// La lista de todos los puntos de la volqueta (como en tu PDF físico)
-const puntosRevision = [
-  { key: 'luces_frontales', label: 'Luces frontales (altas/bajas)' },
-  { key: 'luces_traseras', label: 'Luces traseras de trabajo' },
-  { key: 'direccionales_delanteras', label: 'Direccionales delanteras' },
-  { key: 'direccionales_traseras', label: 'Direccionales traseras' },
-  { key: 'espejos_laterales', label: 'Espejos laterales' },
-  { key: 'freno_servicio', label: 'Freno de servicio' },
-  { key: 'llantas_estado', label: 'Estado de llantas (sin abultamientos)' },
-  { key: 'fugas_hidraulicas', label: 'Control de fugas hidráulicas' },
-  { key: 'documentos', label: 'Documentos al día (SOAT/Tecno)' },
-  // ... (Agrega aquí el resto de keys de tu base de datos según lo que quieras en el PDF) ...
-];
-
-// Generar el PDF
+//FUNCIONES DE INTERFAZ Y DESCARGA
 const generarPDFSemanal = () => {
   if (checklistsFiltrados.value.length === 0) {
     alert("No hay reportes para exportar. Seleccione una placa y un rango de fechas válido.");
@@ -509,30 +523,26 @@ const generarPDFSemanal = () => {
 
   const elemento = document.getElementById('matriz-pdf');
   const opciones = {
-    margin:       10,
-    filename:     `Matriz_Semanal_${filtros.value.texto || 'General'}.pdf`,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2 },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+    margin: 10,
+    filename: `Matriz_Semanal_${filtros.value.texto || 'General'}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
   html2pdf().set(opciones).from(elemento).save();
 };
 
 const descargarPDF = () => {
-  // Apuntamos al elemento HTML que queremos imprimir (por su ID)
   const elemento = document.getElementById('contenido-pdf');
-
-  // Nombramos el archivo combinando la placa y la fecha
   const nombreArchivo = `Reporte_${checklistSeleccionado.value.placa}_${checklistSeleccionado.value.fecha_formateada}.pdf`;
 
-  // Configuramos opciones de calidad e impresión
   const opciones = {
     margin: 10,
     filename: nombreArchivo,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 }, // Aumenta la calidad
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' } // Horizontal para que quepan las 4 columnas
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
   };
 
   html2pdf().set(opciones).from(elemento).save();
