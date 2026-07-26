@@ -4,6 +4,13 @@ const mysql = require('mysql2/promise');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
+const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_DATABASE', 'JWT_SECRET'];
+const missing = requiredEnvVars.filter(v => !process.env[v]);
+if (missing.length > 0) {
+  console.error(`Error: Faltan variables de entorno requeridas: ${missing.join(', ')}`);
+  console.error('Crea un archivo .env basado en .env.example');
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +18,10 @@ const PORT = process.env.PORT || 3000;
 // ==========================================
 // 1. CONFIGURACIÓN DE MIDDLEWARES Y BD
 // ==========================================
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 
 const pool = mysql.createPool({
@@ -41,23 +51,6 @@ const verificarToken = (req, res, next) => {
     return res.status(401).json({ error: 'Token inválido o expirado.' });
   }
 };
-
-// --- RUTA DE EMERGENCIA PARA ARREGLAR CONTRASEÑA ---
-/*app.get('/api/fix-admin', async (req, res) => {
-  try {
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('123456', salt); // Encriptamos '123456'
-    
-    await pool.query(
-      'UPDATE colaboradores SET password = ? WHERE email = "admin@materialesvera.com"', 
-      [hashedPassword]
-    );
-    
-    res.json({ mensaje: '¡Éxito! Contraseña del admin actualizada correctamente a 123456.' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});*/
 
 const esAdmin = (req, res, next) => {
   if (req.usuario && req.usuario.rol === 'Admin') {
