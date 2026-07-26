@@ -156,6 +156,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { API_URL } from '@/config';
 
 const nombreUsuario = ref(localStorage.getItem('nombre'));
 const listaVehiculos = ref([]);
@@ -203,7 +204,7 @@ onMounted(() => {
 
 const cargarVehiculosDisponibles = async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/conductor/vehiculos-disponibles', {
+    const res = await fetch(`${API_URL}/api/conductor/vehiculos-disponibles`, {
       headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (res.ok) listaVehiculos.value = await res.json();
@@ -229,7 +230,7 @@ const seleccionarVehiculo = () => {
 const enviarChecklist = async () => {
   guardando.value = true;
   try {
-    const res = await fetch('http://localhost:3000/api/conductor/checklist', {
+    const res = await fetch(`${API_URL}/api/conductor/checklist`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
       body: JSON.stringify(formulario.value)

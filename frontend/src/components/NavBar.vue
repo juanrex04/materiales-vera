@@ -7,7 +7,7 @@
         </button>
 
         <div class="nav-menu" :class="{ 'nav-active': menuAbierto }" @click="menuAbierto = false">
-            <span class="user-tag">{{ nombreUsuario }}</span>
+            <span class="user-tag"><strong>{{ nombreUsuario }}</strong></span>
 
             <div v-if="rolUsuario === 'Admin'" class="admin-buttons">
                 <router-link to="/dashboard" class="btn-nav" active-class="activo">

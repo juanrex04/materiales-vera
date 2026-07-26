@@ -28,6 +28,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { API_URL } from '@/config';
 
 // Variables reactivas
 const email = ref('');
@@ -42,7 +43,7 @@ const hacerLogin = async () => {
   mensajeError.value = '';
 
   try {
-    const respuesta = await fetch('http://localhost:3000/api/login', {
+    const respuesta = await fetch(`${API_URL}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email.value, password: password.value })

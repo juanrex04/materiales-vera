@@ -97,8 +97,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { API_URL } from '@/config';
 
-const nombreUsuario = ref(localStorage.getItem('nombre'));
 const rolUsuario = ref(localStorage.getItem('rol'));
 const router = useRouter();
 
@@ -111,7 +111,7 @@ onMounted(() => { if (rolUsuario.value !== 'Admin') router.push('/dashboard'); o
 
 const obtenerVehiculos = async () => {
     try {
-        const res = await fetch('http://localhost:3000/api/admin/vehiculos', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        const res = await fetch(`${API_URL}/api/admin/vehiculos`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
         listaVehiculos.value = await res.json();
     } catch (error) { console.error(error); }
 };

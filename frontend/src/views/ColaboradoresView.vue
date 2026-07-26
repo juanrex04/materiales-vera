@@ -62,7 +62,7 @@
                         </div>
                         <div class="modal-actions">
                             <button type="button" @click="cerrarModal" class="btn-secondary">Cancelar</button>
-                            <button type="submit" class="btn-primary">💾 Guardar</button>
+                            <button type="submit" class="btn-primary">Guardar</button>
                         </div>
                     </form>
                 </div>
@@ -74,8 +74,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { API_URL } from '@/config';
 
-const nombreUsuario = ref(localStorage.getItem('nombre'));
 const rolUsuario = ref(localStorage.getItem('rol'));
 const router = useRouter();
 
@@ -88,7 +88,7 @@ onMounted(() => { if (rolUsuario.value !== 'Admin') router.push('/dashboard'); o
 
 const obtenerColaboradores = async () => {
     try {
-        const res = await fetch('http://localhost:3000/api/admin/colaboradores', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        const res = await fetch(`${API_URL}/api/admin/colaboradores`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
         listaColaboradores.value = await res.json();
     } catch (error) { console.error(error); }
 };
@@ -110,7 +110,7 @@ const abrirModalEditar = (c) => {
 const cerrarModal = () => mostrarModal.value = false;
 
 const guardarColaborador = async () => {
-    const url = modoEdicion.value ? `http://localhost:3000/api/admin/colaboradores/${formulario.value.id}` : 'http://localhost:3000/api/admin/colaboradores';
+    const url = modoEdicion.value ? `${API_URL}/api/admin/colaboradores/${formulario.value.id}` : `${API_URL}/api/admin/colaboradores`;
     const metodo = modoEdicion.value ? 'PUT' : 'POST';
 
     await fetch(url, {
@@ -123,13 +123,11 @@ const guardarColaborador = async () => {
 
 const eliminarColaborador = async (id) => {
     if (!confirm('¿Deseas desvincular a este colaborador del sistema?')) return;
-    const res = await fetch(`http://localhost:3000/api/admin/colaboradores/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+    const res = await fetch(`${API_URL}/api/admin/colaboradores/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
     if (!res.ok) {
         alert("No se puede eliminar un conductor si tiene un vehículo asignado.");
     } else {
         obtenerColaboradores();
     }
 };
-
-const cerrarSesion = () => { localStorage.clear(); router.push('/'); };
 </script>

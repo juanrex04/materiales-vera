@@ -260,7 +260,7 @@ app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
 
     // Si el vehículo NO está apto, automáticamente le cambiamos el estado a 'Mantenimiento' para alertar al administrador
     if (!apto_para_trabajar) {
-      await pool.query("UPDATE vehiculos SET estado = 'Mantenimiento' WHERE id = ?", [vehiculo_id]);
+      await pool.query("UPDATE vehiculos SET estado = 'Mantenimiento' WHERE id = ?", [data.vehiculo_id]);
     }
 
     res.json({

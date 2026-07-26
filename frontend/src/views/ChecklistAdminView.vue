@@ -317,7 +317,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import html2pdf from 'html2pdf.js';
-
+import { API_URL } from '@/config';
 const listaChecklists = ref([]);
 const modalVisible = ref(false);
 const checklistSeleccionado = ref(null);
@@ -418,7 +418,7 @@ onMounted(() => {
 
 const cargarChecklists = async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/admin/checklists', {
+    const res = await fetch(`${API_URL}/api/admin/checklists`, {
       headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     if (res.ok) {

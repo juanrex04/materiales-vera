@@ -26,6 +26,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { API_URL } from '@/config';
 
 const nombreUsuario = ref('');
 const rolUsuario = ref('');
@@ -41,7 +42,7 @@ onMounted(() => {
 const obtenerAlertas = async () => {
   alertasDocumentos.value = [];
   try {
-    const res = await fetch('http://localhost:3000/api/admin/vehiculos', {
+    const res = await fetch(`${API_URL}/api/admin/vehiculos`, {
       headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
     });
     const datos = await res.json();
