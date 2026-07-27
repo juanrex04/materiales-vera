@@ -103,7 +103,12 @@ app.post('/api/login', [
       { expiresIn: '8h' }
     );
 
-    res.json({ token, rol: usuario.nombre_rol, nombre: usuario.nombre });
+    res.json({
+      token,
+      rol: usuario.nombre_rol,
+      nombre: usuario.nombre,
+      debe_cambiar_password: !!usuario.debe_cambiar_password
+    });
   } catch (err) {
     res.status(500).json({ error: 'Error interno en el servidor, notifique administración' });
   }
@@ -150,12 +155,12 @@ app.post('/api/admin/colaboradores', verificarToken, esAdmin, [
     .isInt({ min: 1 })
     .withMessage('El rol asignado no es válido')
 ], validar, async (req, res) => {
-  const { nombre, email, password, rol_id, licencia_conducir } = req.body;
+  const { nombre, email, rol_id, licencia_conducir } = req.body;
   try {
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash('12345', salt);
     const [result] = await pool.query(
-      'INSERT INTO colaboradores (nombre, email, password, rol_id, licencia_conducir) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO colaboradores (nombre, email, password, rol_id, licencia_conducir, debe_cambiar_password) VALUES (?, ?, ?, ?, ?, TRUE)',
       [nombre, email, hashedPassword, rol_id, licencia_conducir || null]
     );
     res.status(201).json({ mensaje: 'Colaborador creado exitosamente', id: result.insertId });
@@ -392,6 +397,48 @@ app.delete('/api/inventario/:id', verificarToken, esAdmin, async (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Error no capturado:', err.stack);
   res.status(500).json({ error: 'Error interno del servidor' });
+});
+
+/*MIDDLEWARE PARA VALIDAR SI EL USUARIO DEBE CAMBIAR LA CONTRASEÑA AL 
+INICIAR SESION POR PRIMERA VEZ*/
+
+app.put('/api/cambiar-password', verificarToken, [
+  body('password_actual')
+    .notEmpty()
+    .withMessage('La contraseña actual es requerida'),
+  body('password_nuevo')
+    .isLength({ min: 6 })
+    .withMessage('La nueva contraseña debe tener mínimo 6 caracteres')
+], validar, async (req, res) => {
+  const { password_actual, password_nuevo } = req.body;
+
+  try {
+    // 1. Buscar al usuario
+    const [usuarios] = await pool.query('SELECT * FROM colaboradores WHERE id = ?', [req.usuario.id]);
+    if (usuarios.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // 2. Verificar que la contraseña actual sea correcta
+    const usuario = usuarios[0];
+    const contraseñaValida = await bcrypt.compare(password_actual, usuario.password);
+    if (!contraseñaValida) {
+      return res.status(401).json({ error: 'La contraseña actual es incorrecta' });
+    }
+
+    // 3. Hashear la nueva contraseña y actualizar
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password_nuevo, salt);
+    await pool.query(
+      'UPDATE colaboradores SET password = ?, debe_cambiar_password = FALSE WHERE id = ?',
+      [hashedPassword, req.usuario.id]
+    );
+
+    res.json({ mensaje: 'Contraseña actualizada exitosamente' });
+  } catch (error) {
+    console.error('Error al cambiar contraseña:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
 // ==========================================

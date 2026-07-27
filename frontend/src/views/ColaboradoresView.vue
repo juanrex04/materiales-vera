@@ -42,9 +42,9 @@
                             <div><label>Nombre Completo:</label><input v-model="formulario.nombre" required /></div>
                             <div><label>Email:</label><input type="email" v-model="formulario.email" required /></div>
 
-                            <div v-if="!modoEdicion">
-                                <label>Contraseña Inicial:</label>
-                                <input type="password" v-model="formulario.password" required />
+                            <div v-if="!modoEdicion" class="aviso-password">
+                                <p>La contraseña inicial será: <strong>12345</strong></p>
+                                <p>El colaborador deberá cambiarla al iniciar sesión por primera vez.</p>
                             </div>
 
                             <div>
@@ -82,7 +82,7 @@ const router = useRouter();
 const listaColaboradores = ref([]);
 const mostrarModal = ref(false);
 const modoEdicion = ref(false);
-const formulario = ref({ id: null, nombre: '', email: '', password: '', rol_id: 2, licencia_conducir: '' });
+const formulario = ref({ id: null, nombre: '', email: '', rol_id: 2, licencia_conducir: '' });
 
 onMounted(() => { if (rolUsuario.value !== 'Admin') router.push('/dashboard'); obtenerColaboradores(); });
 
@@ -95,7 +95,7 @@ const obtenerColaboradores = async () => {
 
 const abrirModalNuevo = () => {
     modoEdicion.value = false;
-    formulario.value = { id: null, nombre: '', email: '', password: '', rol_id: 2, licencia_conducir: '' };
+    formulario.value = { id: null, nombre: '', email: '', rol_id: 2, licencia_conducir: '' };
     mostrarModal.value = true;
 };
 

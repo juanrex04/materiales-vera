@@ -59,13 +59,16 @@ const hacerLogin = async () => {
     localStorage.setItem('token', data.token);
     localStorage.setItem('rol', data.rol);
     localStorage.setItem('nombre', data.nombre);
+    localStorage.setItem('debe_cambiar_password', data.debe_cambiar_password)
 
-    if (data.rol == 'Admin') {
-      // Redirigir al panel de control (Dashboard)
+    if (data.debe_cambiar_password) {
+      router.push('/cambiar-password');
+    } else if (data.rol == 'Admin') {
       router.push('/dashboard');
     } else if (data.rol == 'Conductor') {
-      router.push('/conductores')
+      router.push('/conductores');
     }
+    
   } catch (error) {
     mensajeError.value = error.message;
   } finally {
