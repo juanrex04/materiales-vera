@@ -88,7 +88,7 @@ app.post('/api/login', async (req, res) => {
 
     res.json({ token, rol: usuario.nombre_rol, nombre: usuario.nombre });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Error interno en el servidor, notifique administración' });
   }
 });
 
@@ -108,7 +108,7 @@ app.get('/api/conductor/mi-vehiculo', verificarToken, async (req, res) => {
 
     if (vehiculos.length === 0) return res.json({ mensaje: 'No tienes ningún vehículo asignado actualmente.' });
     res.json(vehiculos[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 // ==========================================
@@ -118,7 +118,7 @@ app.get('/api/admin/colaboradores', verificarToken, esAdmin, async (req, res) =>
   try {
     const [rows] = await pool.query(`SELECT c.id, c.nombre, c.email, r.nombre as rol, c.licencia_conducir FROM colaboradores c JOIN roles r ON c.rol_id = r.id`);
     res.json(rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 app.post('/api/admin/colaboradores', verificarToken, esAdmin, async (req, res) => {
@@ -131,7 +131,7 @@ app.post('/api/admin/colaboradores', verificarToken, esAdmin, async (req, res) =
       [nombre, email, hashedPassword, rol_id, licencia_conducir || null]
     );
     res.status(201).json({ mensaje: 'Colaborador creado exitosamente', id: result.insertId });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 app.put('/api/admin/colaboradores/:id', verificarToken, esAdmin, async (req, res) => {
@@ -140,7 +140,7 @@ app.put('/api/admin/colaboradores/:id', verificarToken, esAdmin, async (req, res
   try {
     await pool.query('UPDATE colaboradores SET nombre = ?, email = ?, rol_id = ?, licencia_conducir = ? WHERE id = ?', [nombre, email, rol_id, licencia_conducir || null, id]);
     res.json({ mensaje: 'Colaborador actualizado' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 app.delete('/api/admin/colaboradores/:id', verificarToken, esAdmin, async (req, res) => {
@@ -175,7 +175,7 @@ app.get('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
       };
     });
     res.json(listaProcesada);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 
@@ -302,7 +302,7 @@ app.post('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
       [placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado || 'Disponible']
     );
     res.status(201).json({ mensaje: 'Vehículo registrado', id: result.insertId });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 // ACTUALIZAR
@@ -315,7 +315,7 @@ app.put('/api/admin/vehiculos/:id', verificarToken, esAdmin, async (req, res) =>
       [placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado, id]
     );
     res.json({ mensaje: 'Vehículo modificado con éxito' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 // ELIMINAR
@@ -333,7 +333,7 @@ app.get('/api/inventario', verificarToken, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM inventario ORDER BY nombre_producto ASC');
     res.json(rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 app.post('/api/inventario', verificarToken, esAdmin, async (req, res) => {
@@ -341,7 +341,7 @@ app.post('/api/inventario', verificarToken, esAdmin, async (req, res) => {
   try {
     const [result] = await pool.query('INSERT INTO inventario (nombre_producto, sku, cantidad, ubicacion) VALUES (?, ?, ?, ?)', [nombre_producto, sku, cantidad, ubicacion]);
     res.status(201).json({ mensaje: 'Producto en bodega guardado', id: result.insertId });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 app.put('/api/inventario/:id', verificarToken, esAdmin, async (req, res) => {
@@ -350,14 +350,20 @@ app.put('/api/inventario/:id', verificarToken, esAdmin, async (req, res) => {
   try {
     await pool.query('UPDATE inventario SET nombre_producto = ?, sku = ?, cantidad = ?, ubicacion = ? WHERE id = ?', [nombre_producto, sku, cantidad, ubicacion, id]);
     res.json({ mensaje: 'Inventario actualizado' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 app.delete('/api/inventario/:id', verificarToken, esAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM inventario WHERE id = ?', [req.params.id]);
     res.json({ mensaje: 'Producto eliminado del catálogo' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
+});
+
+//MIDDLEWARE GLOBAL PARA ERRORES
+app.use((err, req, res, next) => {
+  console.error('Error no capturado:', err.stack);
+  res.status(500).json({ error: 'Error interno del servidor' });
 });
 
 // ==========================================
