@@ -3,7 +3,10 @@ const cors = require('cors');
 const mysql = require('mysql2/promise');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { body, param, validationResult } = require('express-validator')
+
 require('dotenv').config();
+
 const requiredEnvVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_DATABASE', 'JWT_SECRET'];
 const missing = requiredEnvVars.filter(v => !process.env[v]);
 if (missing.length > 0) {
@@ -15,6 +18,13 @@ if (missing.length > 0) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const validar = (req, res, next) => {
+  const errores = validationResult(req);
+  if (!errores.isEmpty()) {
+    return res.status(400).json({ error: errores.array()[0].msg });
+  }
+  next();
+};
 // ==========================================
 // 1. CONFIGURACIÓN DE MIDDLEWARES Y BD
 // ==========================================
@@ -63,7 +73,14 @@ const esAdmin = (req, res, next) => {
 // ==========================================
 // 3. MÓDULO DE AUTENTICACIÓN
 // ==========================================
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', [
+  body('email')
+    .isEmail()
+    .withMessage('Debe ser un correo electronico válido'),
+  body('password')
+    .notEmpty()
+    .withMessage('La coontraseña es requerida')
+], validar, async (req, res) => {
   const { email, password } = req.body;
   try {
     const [usuarios] = await pool.query(`
@@ -121,7 +138,18 @@ app.get('/api/admin/colaboradores', verificarToken, esAdmin, async (req, res) =>
   } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
-app.post('/api/admin/colaboradores', verificarToken, esAdmin, async (req, res) => {
+app.post('/api/admin/colaboradores', verificarToken, esAdmin, [
+  body('nombre')
+    .trim()
+    .notEmpty()
+    .withMessage('El nombre es requerido'),
+  body('email')
+    .isEmail()
+    .withMessage('Debe ser un correo electrónico válido'),
+  body('rol_id')
+    .isInt({ min: 1 })
+    .withMessage('El rol asignado no es válido')
+], validar, async (req, res) => {
   const { nombre, email, password, rol_id, licencia_conducir } = req.body;
   try {
     const salt = await bcrypt.genSalt(10);
