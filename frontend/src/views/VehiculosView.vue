@@ -17,6 +17,7 @@
                                 <th>Estado operativo</th>
                                 <th>SOAT</th>
                                 <th>Tecnomecánica</th>
+                                <th>Cambio Aceite</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -26,7 +27,7 @@
                                 <td>{{ v.marca }}</td>
                                 <td>{{ v.capacidad_carga_kg }} kg</td>
                                 <td><span :class="['badge-estado', v.estado.toLowerCase().replace(' ', '-')]">{{
-                                        v.estado }}</span></td>
+                                    v.estado }}</span></td>
                                 <td
                                     :class="{ 'celda-roja': v.soat_estado === 'VENCIDO', 'celda-amarilla': v.soat_estado === 'PROXIMO' }">
                                     <strong>{{ formatearFecha(v.fecha_soat) }}</strong>
@@ -34,7 +35,7 @@
                                         <span v-if="v.soat_estado === 'VENCIDO'">Vencido hace {{
                                             Math.abs(v.soat_dias_restantes) }} días</span>
                                         <span v-else-if="v.soat_estado === 'PROXIMO'">Faltan {{ v.soat_dias_restantes
-                                            }} días</span>
+                                        }} días</span>
                                         <span v-else>Al día ({{ v.soat_dias_restantes }} días)</span>
                                     </div>
                                 </td>
@@ -49,6 +50,23 @@
                                             v.tecno_dias_restantes }} días</span>
                                         <span v-else>Al día ({{ v.tecno_dias_restantes }} días)</span>
                                     </div>
+                                </td>
+
+                                <td
+                                    :class="{ 'celda-roja': v.aceite_estado === 'VENCIDO', 'celda-amarilla': v.aceite_estado === 'PROXIMO' }">
+                                    <template v-if="v.fecha_ultimo_cambio_aceite">
+                                        <strong>{{ formatearFecha(v.fecha_ultimo_cambio_aceite) }}</strong>
+                                        <div class="dias-texto">
+                                            <span v-if="v.aceite_estado === 'VENCIDO'">Vencido hace {{
+                                                Math.abs(v.aceite_dias_restantes) }} días</span>
+                                            <span v-else-if="v.aceite_estado === 'PROXIMO'">Faltan {{
+                                                v.aceite_dias_restantes }} días</span>
+                                            <span v-else>Al día ({{ v.aceite_dias_restantes }} días)</span>
+                                        </div>
+                                    </template>
+                                    <template v-else>
+                                        <span class="badge-sin-dato">Sin registro</span>
+                                    </template>
                                 </td>
                                 <td>
                                     <button @click="abrirModalEditar(v)" class="btn-edit">Editar</button>
@@ -79,9 +97,15 @@
                                 </select>
                             </div>
                             <div><label>Fecha SOAT:</label><input type="date" v-model="formulario.fecha_soat"
-                                    required /></div>
+                                    required />
+                            </div>
                             <div><label>Fecha Tecnomecánica:</label><input type="date"
-                                    v-model="formulario.fecha_tecnomecanica" required /></div>
+                                    v-model="formulario.fecha_tecnomecanica" required />
+                            </div>
+                            <div>
+                                <label>Último Cambio de Aceite:</label>
+                                <input type="date" v-model="formulario.fecha_ultimo_cambio_aceite" required />
+                            </div>
                         </div>
                         <div class="modal-actions">
                             <button type="button" @click="cerrarModal" class="btn-secondary">Cancelar</button>
@@ -105,7 +129,7 @@ const router = useRouter();
 const listaVehiculos = ref([]);
 const mostrarModal = ref(false);
 const modoEdicion = ref(false);
-const formulario = ref({ id: null, placa: '', marca: '', capacidad_carga_kg: '', estado: 'Disponible', fecha_soat: '', fecha_tecnomecanica: '' });
+const formulario = ref({ id: null, placa: '', marca: '', capacidad_carga_kg: '', estado: 'Disponible', fecha_soat: '', fecha_tecnomecanica: '', fecha_ultimo_cambio_aceite: ''});
 
 onMounted(() => { if (rolUsuario.value !== 'Admin') router.push('/dashboard'); obtenerVehiculos(); });
 
@@ -118,20 +142,20 @@ const obtenerVehiculos = async () => {
 
 const abrirModalNuevo = () => {
     modoEdicion.value = false;
-    formulario.value = { id: null, placa: '', marca: '', capacidad_carga_kg: '', estado: 'Disponible', fecha_soat: '', fecha_tecnomecanica: '' };
+    formulario.value = { id: null, placa: '', marca: '', capacidad_carga_kg: '', estado: 'Disponible', fecha_soat: '', fecha_tecnomecanica: '', fecha_ultimo_cambio_aceite: '' };
     mostrarModal.value = true;
 };
 
 const abrirModalEditar = (v) => {
     modoEdicion.value = true;
-    formulario.value = { ...v, fecha_soat: v.fecha_soat.split('T')[0], fecha_tecnomecanica: v.fecha_tecnomecanica.split('T')[0] };
+    formulario.value = { ...v, fecha_soat: v.fecha_soat.split('T')[0], fecha_tecnomecanica: v.fecha_tecnomecanica.split('T')[0], fecha_ultimo_cambio_aceite: v.fecha_ultimo_cambio_aceite ? v.fecha_ultimo_cambio_aceite.split('T')[0] : ''};
     mostrarModal.value = true;
 };
 
 const cerrarModal = () => mostrarModal.value = false;
 
 const guardarVehiculo = async () => {
-    const url = modoEdicion.value ? `http://localhost:3000/api/admin/vehiculos/${formulario.value.id}` : 'http://localhost:3000/api/admin/vehiculos';
+    const url = modoEdicion.value ? `${API_URL}/api/admin/vehiculos/${formulario.value.id}` : `${API_URL}/api/admin/vehiculos`;
     const metodo = modoEdicion.value ? 'PUT' : 'POST';
     await fetch(url, {
         method: metodo,
@@ -143,10 +167,9 @@ const guardarVehiculo = async () => {
 
 const eliminarVehiculo = async (id) => {
     if (!confirm('¿Eliminar este camión?')) return;
-    await fetch(`http://localhost:3000/api/admin/vehiculos/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+    await fetch(`${API_URL}/api/admin/vehiculos/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
     obtenerVehiculos();
 };
 
 const formatearFecha = (c) => new Date(c).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
-const cerrarSesion = () => { localStorage.clear(); router.push('/'); };
 </script>

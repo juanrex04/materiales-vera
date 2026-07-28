@@ -731,6 +731,15 @@ a.btn-nav {
   color: #0369a1;
 }
 
+.badge-sin-dato {
+  background-color: #fef3c7;
+  color: #92400e;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 /* ========================================================
    9. RESPONSIVE DESIGN & BURGER MENU OPTIMIZATION
    ======================================================== */

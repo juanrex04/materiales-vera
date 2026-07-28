@@ -60,6 +60,17 @@ const obtenerAlertas = async () => {
           mensaje: `La Tecnomecánica está ${v.tecno_estado === 'VENCIDO' ? 'VENCIDA hace' : 'próxima a vencer en'} ${Math.abs(v.tecno_dias_restantes)} días.`
         });
       }
+
+      if (v.aceite_estado !== 'OK') {
+        alertasDocumentos.value.push({
+          id: `aceite-${v.id}`,
+          placa: v.placa,
+          gravedad: v.aceite_estado === 'VENCIDO' ? 'critica' : 'advertencia',
+          mensaje: v.fecha_ultimo_cambio_aceite
+            ? `Cambio de aceite ${v.aceite_estado === 'VENCIDO' ? 'VENCIDO hace' : 'próximo a vencer en'} ${Math.abs(v.aceite_dias_restantes)} días.`
+            : `No tiene registro de cambio de aceite. Se requiere registro.`
+        });
+      }
     });
   } catch (error) { console.error(error); }
 };

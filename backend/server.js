@@ -198,13 +198,26 @@ app.get('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
 
       const diasFaltanSoat = Math.ceil((soat - fechaActual) / (1000 * 60 * 60 * 24));
       const diasFaltanTecno = Math.ceil((tecno - fechaActual) / (1000 * 60 * 60 * 24));
+      let aceiteProximo;
+      let diasFaltanAceite;
+
+      if (vehiculo.fecha_ultimo_cambio_aceite) {
+        aceiteProximo = new Date(vehiculo.fecha_ultimo_cambio_aceite);
+        aceiteProximo.setMonth(aceiteProximo.getMonth() + 3);  // Sumar 3 meses
+        diasFaltanAceite = Math.ceil((aceiteProximo - fechaActual) / (1000 * 60 * 60 * 24));
+      } else {
+        // Sin registro = necesita cambio urgente
+        diasFaltanAceite = -999;
+      }
 
       return {
         ...vehiculo,
         soat_dias_restantes: diasFaltanSoat,
         tecno_dias_restantes: diasFaltanTecno,
+        aceite_dias_restantes: diasFaltanAceite,
         soat_estado: diasFaltanSoat < 0 ? 'VENCIDO' : (diasFaltanSoat <= 15 ? 'PROXIMO' : 'OK'),
-        tecno_estado: diasFaltanTecno < 0 ? 'VENCIDO' : (diasFaltanTecno <= 15 ? 'PROXIMO' : 'OK')
+        tecno_estado: diasFaltanTecno < 0 ? 'VENCIDO' : (diasFaltanTecno <= 15 ? 'PROXIMO' : 'OK'),
+                aceite_estado: diasFaltanAceite < 0 ? 'VENCIDO' : (diasFaltanAceite <= 8 ? 'PROXIMO' : 'OK')
       };
     });
     res.json(listaProcesada);
@@ -317,7 +330,6 @@ app.get('/api/admin/checklists', verificarToken, async (req, res) => {
       ORDER BY c.fecha DESC, c.hora DESC
     `;
 
-    // Recuerda usar pool.query o conexion.query, según como lo tengas configurado
     const [checklists] = await pool.query(query);
     res.json(checklists);
   } catch (error) {
@@ -327,25 +339,70 @@ app.get('/api/admin/checklists', verificarToken, async (req, res) => {
 });
 
 // CREAR
-app.post('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
-  const { placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado } = req.body;
+app.post('/api/admin/vehiculos', verificarToken, esAdmin,[
+   body('placa')
+    .trim()
+    .notEmpty()
+    .withMessage('La placa es requerida'),
+  body('marca')
+    .trim()
+    .notEmpty()
+    .withMessage('La marca es requerida'),
+  body('capacidad_carga_kg')
+    .isFloat({ min: 1 })
+    .withMessage('La capacidad debe ser un número mayor a 0'),
+  body('fecha_soat')
+    .isISO8601()
+    .withMessage('La fecha del SOAT no es válida'),
+  body('fecha_tecnomecanica')
+    .isISO8601()
+    .withMessage('La fecha de tecnomecánica no es válida'),
+  body('fecha_ultimo_cambio_aceite')
+    .isISO8601()
+    .withMessage('La fecha de último cambio de aceite es requerida')
+], async (req, res) => {
+  const { placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado, fecha_ultimo_cambio_aceite } = req.body;
   try {
     const [result] = await pool.query(
-      'INSERT INTO vehiculos (placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado) VALUES (?, ?, ?, ?, ?, ?)',
-      [placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado || 'Disponible']
+      'INSERT INTO vehiculos (placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado, fecha_ultimo_cambio_aceite) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado || 'Disponible', fecha_ultimo_cambio_aceite || null]
     );
     res.status(201).json({ mensaje: 'Vehículo registrado', id: result.insertId });
   } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 // ACTUALIZAR
-app.put('/api/admin/vehiculos/:id', verificarToken, esAdmin, async (req, res) => {
+app.put('/api/admin/vehiculos/:id', verificarToken, esAdmin,[
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('ID de vehículo inválido'),
+  body('placa')
+    .trim()
+    .notEmpty()
+    .withMessage('La placa es requerida'),
+  body('marca')
+    .trim()
+    .notEmpty()
+    .withMessage('La marca es requerida'),
+  body('capacidad_carga_kg')
+    .isFloat({ min: 1 })
+    .withMessage('La capacidad debe ser un número mayor a 0'),
+  body('fecha_soat')
+    .isISO8601()
+    .withMessage('La fecha del SOAT no es válida'),
+  body('fecha_tecnomecanica')
+    .isISO8601()
+    .withMessage('La fecha de tecnomecánica no es válida'),
+  body('fecha_ultimo_cambio_aceite')
+    .isISO8601()
+    .withMessage('La fecha de último cambio de aceite es requierida')
+], async (req, res) => {
   const { id } = req.params;
-  const { placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado } = req.body;
+  const { placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado, fecha_ultimo_cambio_aceite } = req.body;
   try {
     await pool.query(
-      'UPDATE vehiculos SET placa = ?, marca = ?, capacidad_carga_kg = ?, fecha_soat = ?, fecha_tecnomecanica = ?, estado = ? WHERE id = ?',
-      [placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado, id]
+      'UPDATE vehiculos SET placa = ?, marca = ?, capacidad_carga_kg = ?, fecha_soat = ?, fecha_tecnomecanica = ?, estado = ?, fecha_ultimo_cambio_aceite = ? WHERE id = ?',
+      [placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado, fecha_ultimo_cambio_aceite || null, id]
     );
     res.json({ mensaje: 'Vehículo modificado con éxito' });
   } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
