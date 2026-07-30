@@ -122,8 +122,10 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { API_URL } from '@/config';
+import { decodificarToken } from '@/auth';
 
-const rolUsuario = ref(localStorage.getItem('rol'));
+const usuario = decodificarToken()
+const rolUsuario = ref(usuario?.rol || '');
 const router = useRouter();
 
 const listaVehiculos = ref([]);

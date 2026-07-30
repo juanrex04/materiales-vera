@@ -34,12 +34,14 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { decodificarToken } from '@/auth';
 
 const router = useRouter();
 const menuAbierto = ref(false);
 
 const nombreUsuario = ref(localStorage.getItem('nombre') || 'Usuario');
-const rolUsuario = ref(localStorage.getItem('rol') || '');
+const usuario = decodificarToken();
+const rolUsuario = usuario?.rol;
 
 const cerrarSesion = () => {
     localStorage.clear();

@@ -55,9 +55,7 @@ const hacerLogin = async () => {
       throw new Error(data.error || 'Error al iniciar sesión');
     }
 
-    // ¡Éxito! Guardamos el token y los datos en el navegador
     localStorage.setItem('token', data.token);
-    localStorage.setItem('rol', data.rol);
     localStorage.setItem('nombre', data.nombre);
     localStorage.setItem('debe_cambiar_password', data.debe_cambiar_password)
 
@@ -68,7 +66,7 @@ const hacerLogin = async () => {
     } else if (data.rol == 'Conductor') {
       router.push('/conductores');
     }
-    
+
   } catch (error) {
     mensajeError.value = error.message;
   } finally {

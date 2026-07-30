@@ -15,23 +15,35 @@ const router = createRouter({
     { path: '/vehiculos', name: 'vehiculos', component: VehiculosView },
     { path: '/colaboradores', name: 'colaboradores', component: ColaboradoresView },
     { path: '/conductores', name: 'conductores', component: ConductoresView },
-    { path: '/checklistAdmin', name: 'chechlistadmin', component: ChecklistAdminView },
+    { path: '/checklistAdmin', name: 'checklistadmin', component: ChecklistAdminView },
     { path: '/cambiar-password', name: 'cambiar-password', component: CambiarPasswordView }
   ]
 });
 
-// Opcional: Guardia de seguridad para evitar que entren sin token
-router.beforeEach((to, from, next) => {
+// Helper para decodificar JWT sin librería (solo lectura, no verifica firma)
+function decodificarToken(token) {
+  try {
+    const payload = token.split('.')[1];
+    return JSON.parse(atob(payload));
+  } catch {
+    return null;
+  }
+}
+
+router.beforeEach((to, from) => {
   const token = localStorage.getItem('token');
+  const usuario = token ? decodificarToken(token) : null
   const debeCambiar = localStorage.getItem('debe_cambiar_password') === 'true';
 
-  if (!token && to.name !== 'login') {
-    next({ name: 'login' });
-  } else if (debeCambiar && to.name !== 'cambiar-password') {
-    next({ name: 'cambiar-password' });
-  } else {
-    next();
-  }
+  if (!token && to.name !== 'login')
+    return { name: 'login' };
+
+  if (debeCambiar && to.name !== 'cambiar-password')
+    return { name: 'cambiar-password' };
+
+  const rutasAdmin = ['dashboard', 'vehiculos', 'colaboradores', 'checklistadmin'];
+  if (usuario && usuario.rol !== 'Admin' && rutasAdmin.includes(to.name))
+    return { name: 'login' };
 });
 
 export default router;

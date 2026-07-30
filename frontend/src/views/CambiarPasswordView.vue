@@ -35,6 +35,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { API_URL } from '@/config';
+import { decodificarToken } from '@/auth';
 
 const router = useRouter();
 const passwordActual = ref('');
@@ -43,6 +44,7 @@ const passwordConfirmar = ref('');
 const mensajeError = ref('');
 const mensajeExito = ref('');
 const cargando = ref(false);
+const usuario = decodificarToken()
 
 const cambiarContraseña = async () => {
   mensajeError.value = '';
@@ -80,7 +82,7 @@ const cambiarContraseña = async () => {
     mensajeExito.value = 'Contraseña actualizada. Redirigiendo...';
 
     setTimeout(() => {
-      const rol = localStorage.getItem('rol');
+      const rol = usuario?.rol
       if (rol === 'Admin') router.push('/dashboard');
       else router.push('/conductores');
     }, 1500);

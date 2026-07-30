@@ -26,16 +26,17 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { decodificarToken } from '@/auth';
 import { API_URL } from '@/config';
 
 const nombreUsuario = ref('');
-const rolUsuario = ref('');
+const usuario = decodificarToken()
+const rolUsuario = ref(usuario?.rol || '');
 const router = useRouter();
 const alertasDocumentos = ref([]);
 
 onMounted(() => {
   nombreUsuario.value = localStorage.getItem('nombre');
-  rolUsuario.value = localStorage.getItem('rol');
   if (rolUsuario.value === 'Admin') obtenerAlertas();
 });
 

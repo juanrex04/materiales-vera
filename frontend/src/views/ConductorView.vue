@@ -25,7 +25,7 @@
 
           <div v-if="vehiculoActual" class="alert-documentos"
             style="background: #e0f2fe; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; border-left: 5px solid #0284c7;">
-            <h4 style="margin: 0 0 10px 0; color: #0369a1;">📅 Estado de Documentos</h4>
+            <h4 style="margin: 0 0 10px 0; color: #0369a1;">Estado de Documentos</h4>
             <div style="display: flex; gap: 2rem;">
               <p style="margin: 0;">
                 <strong>SOAT vence:</strong>

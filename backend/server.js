@@ -79,7 +79,7 @@ app.post('/api/login', [
     .withMessage('Debe ser un correo electronico válido'),
   body('password')
     .notEmpty()
-    .withMessage('La coontraseña es requerida')
+    .withMessage('La contraseña es requerida')
 ], validar, async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -315,7 +315,7 @@ app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
 });
 
 // Obtener el historial de checklists para la vista de admin
-app.get('/api/admin/checklists', verificarToken, async (req, res) => {
+app.get('/api/admin/checklists', verificarToken, esAdmin, async (req, res) => {
   try {
     const query = `
       SELECT 
@@ -360,7 +360,7 @@ app.post('/api/admin/vehiculos', verificarToken, esAdmin,[
   body('fecha_ultimo_cambio_aceite')
     .isISO8601()
     .withMessage('La fecha de último cambio de aceite es requerida')
-], async (req, res) => {
+], validar, async (req, res) => {
   const { placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado, fecha_ultimo_cambio_aceite } = req.body;
   try {
     const [result] = await pool.query(
@@ -395,8 +395,8 @@ app.put('/api/admin/vehiculos/:id', verificarToken, esAdmin,[
     .withMessage('La fecha de tecnomecánica no es válida'),
   body('fecha_ultimo_cambio_aceite')
     .isISO8601()
-    .withMessage('La fecha de último cambio de aceite es requierida')
-], async (req, res) => {
+    .withMessage('La fecha de último cambio de aceite es requerida')
+], validar, async (req, res) => {
   const { id } = req.params;
   const { placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado, fecha_ultimo_cambio_aceite } = req.body;
   try {
@@ -419,21 +419,6 @@ app.delete('/api/admin/vehiculos/:id', verificarToken, esAdmin, async (req, res)
 // ==========================================
 // 7. MÓDULO ADMIN - CRUD INVENTARIO
 // ==========================================
-app.get('/api/inventario', verificarToken, async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM inventario ORDER BY nombre_producto ASC');
-    res.json(rows);
-  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
-});
-
-app.post('/api/inventario', verificarToken, esAdmin, async (req, res) => {
-  const { nombre_producto, sku, cantidad, ubicacion } = req.body;
-  try {
-    const [result] = await pool.query('INSERT INTO inventario (nombre_producto, sku, cantidad, ubicacion) VALUES (?, ?, ?, ?)', [nombre_producto, sku, cantidad, ubicacion]);
-    res.status(201).json({ mensaje: 'Producto en bodega guardado', id: result.insertId });
-  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
-});
-
 app.put('/api/inventario/:id', verificarToken, esAdmin, async (req, res) => {
   const { id } = req.params;
   const { nombre_producto, sku, cantidad, ubicacion } = req.body;
