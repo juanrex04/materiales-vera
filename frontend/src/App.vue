@@ -3,6 +3,8 @@
     <Navbar v-if="mostrarNavbar" />
 
     <router-view></router-view>
+
+    <OverlayCarga />
   </div>
 </template>
 
@@ -10,6 +12,7 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import Navbar from '../src/components/NavBar.vue'; // Asegúrate de que la ruta coincida
+import OverlayCarga from '../src/components/OverlayCarga.vue';
 
 const route = useRoute();
 

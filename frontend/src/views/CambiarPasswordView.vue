@@ -36,6 +36,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { API_URL } from '@/config';
 import { decodificarToken } from '@/auth';
+import { iniciarCarga, detenerCarga } from '@/loading';
 
 const router = useRouter();
 const passwordActual = ref('');
@@ -61,6 +62,7 @@ const cambiarContraseña = async () => {
   }
 
   cargando.value = true;
+  iniciarCarga('Actualizando contraseña...');
   try {
     const res = await fetch(`${API_URL}/api/cambiar-password`, {
       method: 'PUT',
@@ -80,6 +82,7 @@ const cambiarContraseña = async () => {
 
     localStorage.setItem('debe_cambiar_password', 'false');
     mensajeExito.value = 'Contraseña actualizada. Redirigiendo...';
+    detenerCarga();
 
     setTimeout(() => {
       const rol = usuario?.rol
@@ -88,6 +91,7 @@ const cambiarContraseña = async () => {
     }, 1500);
   } catch (error) {
     mensajeError.value = error.message;
+    detenerCarga();
   } finally {
     cargando.value = false;
   }

@@ -29,6 +29,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { API_URL } from '@/config';
+import { iniciarCarga, detenerCarga } from '@/loading';
 
 // Variables reactivas
 const email = ref('');
@@ -41,6 +42,7 @@ const router = useRouter();
 const hacerLogin = async () => {
   cargando.value = true;
   mensajeError.value = '';
+  iniciarCarga('Iniciando sesión...');
 
   try {
     const respuesta = await fetch(`${API_URL}/api/login`, {
@@ -68,6 +70,7 @@ const hacerLogin = async () => {
 
   } catch (error) {
     mensajeError.value = error.message;
+    detenerCarga();
   } finally {
     cargando.value = false;
   }

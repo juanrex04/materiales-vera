@@ -9,7 +9,10 @@
 
         <div class="alertas-seccion">
           <h3>⚠️ Alertas de Documentación Urgente</h3>
-          <div v-if="alertasDocumentos.length === 0" class="alerta-vacia">
+          <div v-if="cargando" class="skeleton-grid">
+            <div class="skeleton-card" v-for="s in 4" :key="s"></div>
+          </div>
+          <div v-else-if="alertasDocumentos.length === 0" class="alerta-vacia">
             ✅ Excelente: Todos los vehículos de la flota tienen sus documentos al día.
           </div>
           <div v-else class="alertas-lista">
@@ -34,6 +37,7 @@ const usuario = decodificarToken()
 const rolUsuario = ref(usuario?.rol || '');
 const router = useRouter();
 const alertasDocumentos = ref([]);
+const cargando = ref(false);
 
 onMounted(() => {
   nombreUsuario.value = decodificarToken()?.nombre;
@@ -42,6 +46,7 @@ onMounted(() => {
 
 const obtenerAlertas = async () => {
   alertasDocumentos.value = [];
+  cargando.value = true;
   try {
     const res = await fetch(`${API_URL}/api/admin/vehiculos`, {
       headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -74,6 +79,7 @@ const obtenerAlertas = async () => {
       }
     });
   } catch (error) { console.error(error); }
+  finally { cargando.value = false; }
 };
 
 const cerrarSesion = () => { localStorage.clear(); router.push('/'); };

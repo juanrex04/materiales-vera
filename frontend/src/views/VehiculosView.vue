@@ -22,6 +22,7 @@
                             </tr>
                         </thead>
                         <tbody>
+                            <SkeletonTabla v-if="cargando" :columnas="8" :filas="5" />
                             <tr v-for="v in listaVehiculos" :key="v.id">
                                 <td><strong>{{ v.placa }}</strong></td>
                                 <td>{{ v.marca }}</td>
@@ -109,7 +110,9 @@
                         </div>
                         <div class="modal-actions">
                             <button type="button" @click="cerrarModal" class="btn-secondary">Cancelar</button>
-                            <button type="submit" class="btn-primary">Guardar</button>
+                            <button type="submit" class="btn-primary" :disabled="guardando">
+                                {{ guardando ? 'Guardando...' : 'Guardar' }}
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -123,12 +126,16 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { API_URL } from '@/config';
 import { decodificarToken } from '@/auth';
+import SkeletonTabla from '@/components/SkeletonTabla.vue';
+import { iniciarCarga, detenerCarga } from '@/loading';
 
 const usuario = decodificarToken()
 const rolUsuario = ref(usuario?.rol || '');
 const router = useRouter();
 
 const listaVehiculos = ref([]);
+const cargando = ref(false);
+const guardando = ref(false);
 const mostrarModal = ref(false);
 const modoEdicion = ref(false);
 const formulario = ref({ id: null, placa: '', marca: '', capacidad_carga_kg: '', estado: 'Disponible', fecha_soat: '', fecha_tecnomecanica: '', fecha_ultimo_cambio_aceite: ''});
@@ -136,10 +143,12 @@ const formulario = ref({ id: null, placa: '', marca: '', capacidad_carga_kg: '',
 onMounted(() => { if (rolUsuario.value !== 'Admin') router.push('/dashboard'); obtenerVehiculos(); });
 
 const obtenerVehiculos = async () => {
+    cargando.value = true;
     try {
         const res = await fetch(`${API_URL}/api/admin/vehiculos`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
         listaVehiculos.value = await res.json();
     } catch (error) { console.error(error); }
+    finally { cargando.value = false; }
 };
 
 const abrirModalNuevo = () => {
@@ -159,18 +168,26 @@ const cerrarModal = () => mostrarModal.value = false;
 const guardarVehiculo = async () => {
     const url = modoEdicion.value ? `${API_URL}/api/admin/vehiculos/${formulario.value.id}` : `${API_URL}/api/admin/vehiculos`;
     const metodo = modoEdicion.value ? 'PUT' : 'POST';
-    await fetch(url, {
-        method: metodo,
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify(formulario.value)
-    });
-    cerrarModal(); obtenerVehiculos();
+    guardando.value = true;
+    try {
+        await fetch(url, {
+            method: metodo,
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify(formulario.value)
+        });
+        cerrarModal(); obtenerVehiculos();
+    } catch (error) { console.error(error); }
+    finally { guardando.value = false; }
 };
 
 const eliminarVehiculo = async (id) => {
     if (!confirm('¿Eliminar este camión?')) return;
-    await fetch(`${API_URL}/api/admin/vehiculos/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-    obtenerVehiculos();
+    iniciarCarga('Eliminando vehículo...');
+    try {
+        await fetch(`${API_URL}/api/admin/vehiculos/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        obtenerVehiculos();
+    } catch (error) { console.error(error); }
+    finally { detenerCarga(); }
 };
 
 const formatearFecha = (c) => new Date(c).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });

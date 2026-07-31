@@ -19,6 +19,7 @@
                             </tr>
                         </thead>
                         <tbody>
+                            <SkeletonTabla v-if="cargando" :columnas="5" :filas="5" />
                             <tr v-for="c in listaColaboradores" :key="c.id">
                                 <td><strong>{{ c.nombre }}</strong></td>
                                 <td>{{ c.email }}</td>
@@ -62,7 +63,9 @@
                         </div>
                         <div class="modal-actions">
                             <button type="button" @click="cerrarModal" class="btn-secondary">Cancelar</button>
-                            <button type="submit" class="btn-primary">Guardar</button>
+                            <button type="submit" class="btn-primary" :disabled="guardando">
+                                {{ guardando ? 'Guardando...' : 'Guardar' }}
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -76,12 +79,16 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { API_URL } from '@/config';
 import { decodificarToken } from '@/auth';
+import SkeletonTabla from '@/components/SkeletonTabla.vue';
+import { iniciarCarga, detenerCarga } from '@/loading';
 
 const usuario = decodificarToken()
 const rolUsuario = ref(usuario?.rol || '');
 const router = useRouter();
 
 const listaColaboradores = ref([]);
+const cargando = ref(false);
+const guardando = ref(false);
 const mostrarModal = ref(false);
 const modoEdicion = ref(false);
 const formulario = ref({ id: null, nombre: '', email: '', rol_id: 2, licencia_conducir: '' });
@@ -89,10 +96,12 @@ const formulario = ref({ id: null, nombre: '', email: '', rol_id: 2, licencia_co
 onMounted(() => { if (rolUsuario.value !== 'Admin') router.push('/dashboard'); obtenerColaboradores(); });
 
 const obtenerColaboradores = async () => {
+    cargando.value = true;
     try {
         const res = await fetch(`${API_URL}/api/admin/colaboradores`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
         listaColaboradores.value = await res.json();
     } catch (error) { console.error(error); }
+    finally { cargando.value = false; }
 };
 
 const abrirModalNuevo = () => {
@@ -115,21 +124,29 @@ const guardarColaborador = async () => {
     const url = modoEdicion.value ? `${API_URL}/api/admin/colaboradores/${formulario.value.id}` : `${API_URL}/api/admin/colaboradores`;
     const metodo = modoEdicion.value ? 'PUT' : 'POST';
 
-    await fetch(url, {
-        method: metodo,
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify(formulario.value)
-    });
-    cerrarModal(); obtenerColaboradores();
+    guardando.value = true;
+    try {
+        await fetch(url, {
+            method: metodo,
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify(formulario.value)
+        });
+        cerrarModal(); obtenerColaboradores();
+    } catch (error) { console.error(error); }
+    finally { guardando.value = false; }
 };
 
 const eliminarColaborador = async (id) => {
     if (!confirm('¿Deseas desvincular a este colaborador del sistema?')) return;
-    const res = await fetch(`${API_URL}/api/admin/colaboradores/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-    if (!res.ok) {
-        alert("No se puede eliminar un conductor si tiene un vehículo asignado.");
-    } else {
-        obtenerColaboradores();
-    }
+    iniciarCarga('Eliminando colaborador...');
+    try {
+        const res = await fetch(`${API_URL}/api/admin/colaboradores/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        if (!res.ok) {
+            alert("No se puede eliminar un conductor si tiene un vehículo asignado.");
+        } else {
+            obtenerColaboradores();
+        }
+    } catch (error) { console.error(error); }
+    finally { detenerCarga(); }
 };
 </script>

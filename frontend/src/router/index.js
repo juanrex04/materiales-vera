@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { iniciarCarga, detenerCarga } from '@/loading';
 import LoginView from '../views/LoginView.vue';
 import DashboardView from '../views/DashboardView.vue';
 import VehiculosView from '../views/VehiculosView.vue';
@@ -44,6 +45,14 @@ router.beforeEach((to, from) => {
   const rutasAdmin = ['dashboard', 'vehiculos', 'colaboradores', 'checklistadmin'];
   if (usuario && usuario.rol !== 'Admin' && rutasAdmin.includes(to.name))
     return { name: 'login' };
+});
+
+router.beforeEach(() => {
+  iniciarCarga('Cargando...');
+});
+
+router.afterEach(() => {
+  detenerCarga();
 });
 
 export default router;

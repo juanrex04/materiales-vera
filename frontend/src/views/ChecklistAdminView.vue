@@ -39,8 +39,8 @@
             <button @click="limpiarFiltros" class="btn-edit">
               Limpiar
             </button>
-            <button @click="generarPDFSemanal" class="btn-primary">
-              Descargar PDF Semanal
+            <button @click="generarPDFSemanal" class="btn-primary" :disabled="generandoPDF">
+              {{ generandoPDF ? 'Generando...' : 'Descargar PDF Semanal' }}
             </button>
           </div>
         </div>
@@ -57,6 +57,7 @@
               </tr>
             </thead>
             <tbody>
+              <SkeletonTabla v-if="cargando" :columnas="5" :filas="5" />
               <tr v-for="chk in checklistsFiltrados" :key="chk.id">
                 <td>
                   <strong>{{ formatearFecha(chk.fecha_formateada) }}</strong><br>
@@ -224,8 +225,8 @@
 
             <div class="modal-actions"
               style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #cbd5e1; display: flex; justify-content: space-between;">
-              <button @click="descargarPDF" class="btn-primary">
-                Descargar Reporte PDF
+              <button @click="descargarPDF" class="btn-primary" :disabled="generandoPDF">
+                {{ generandoPDF ? 'Generando...' : 'Descargar Reporte PDF' }}
               </button>
 
               <button @click="cerrarModal" class="btn-secondary">Cerrar</button>
@@ -318,7 +319,11 @@
 import { ref, onMounted, computed } from 'vue';
 import html2pdf from 'html2pdf.js';
 import { API_URL } from '@/config';
+import SkeletonTabla from '@/components/SkeletonTabla.vue';
+import { iniciarCarga, detenerCarga } from '@/loading';
 const listaChecklists = ref([]);
+const cargando = ref(false);
+const generandoPDF = ref(false);
 const modalVisible = ref(false);
 const checklistSeleccionado = ref(null);
 
@@ -417,6 +422,7 @@ onMounted(() => {
 });
 
 const cargarChecklists = async () => {
+  cargando.value = true;
   try {
     const res = await fetch(`${API_URL}/api/admin/checklists`, {
       headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -426,6 +432,8 @@ const cargarChecklists = async () => {
     }
   } catch (error) {
     console.error('Fallo la conexión con el servidor', error);
+  } finally {
+    cargando.value = false;
   }
 };
 
@@ -519,37 +527,55 @@ const obtenerValorMatriz = (llavePropiedad, numeroDia) => {
 };
 
 //FUNCIONES DE INTERFAZ Y DESCARGA
-const generarPDFSemanal = () => {
+const generarPDFSemanal = async () => {
   if (checklistsFiltrados.value.length === 0) {
     alert("No hay reportes para exportar. Seleccione una placa y un rango de fechas válido.");
     return;
   }
 
-  const elemento = document.getElementById('matriz-pdf');
-  const opciones = {
-    margin: 10,
-    filename: `Matriz_Semanal_${filtros.value.texto || 'General'}.pdf`,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
+  generandoPDF.value = true;
+  iniciarCarga('Generando PDF semanal...');
+  try {
+    const elemento = document.getElementById('matriz-pdf');
+    const opciones = {
+      margin: 10,
+      filename: `Matriz_Semanal_${filtros.value.texto || 'General'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
 
-  html2pdf().set(opciones).from(elemento).save();
+    await html2pdf().set(opciones).from(elemento).save();
+  } catch (error) {
+    console.error('Error generando PDF', error);
+  } finally {
+    detenerCarga();
+    generandoPDF.value = false;
+  }
 };
 
-const descargarPDF = () => {
-  const elemento = document.getElementById('contenido-pdf');
-  const nombreArchivo = `Reporte_${checklistSeleccionado.value.placa}_${checklistSeleccionado.value.fecha_formateada}.pdf`;
+const descargarPDF = async () => {
+  generandoPDF.value = true;
+  iniciarCarga('Generando reporte PDF...');
+  try {
+    const elemento = document.getElementById('contenido-pdf');
+    const nombreArchivo = `Reporte_${checklistSeleccionado.value.placa}_${checklistSeleccionado.value.fecha_formateada}.pdf`;
 
-  const opciones = {
-    margin: 10,
-    filename: nombreArchivo,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-  };
+    const opciones = {
+      margin: 10,
+      filename: nombreArchivo,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
 
-  html2pdf().set(opciones).from(elemento).save();
+    await html2pdf().set(opciones).from(elemento).save();
+  } catch (error) {
+    console.error('Error generando PDF', error);
+  } finally {
+    detenerCarga();
+    generandoPDF.value = false;
+  }
 };
 
 const abrirModalDetalles = (checklist) => {

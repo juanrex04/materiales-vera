@@ -15,7 +15,8 @@
 
           <div class="form-group vehiculo-selector">
             <label for="vehiculoSelect">Vehículo Asignado:</label>
-            <select v-model="formulario.vehiculo_id" id="vehiculoSelect" required @change="seleccionarVehiculo">
+            <div v-if="cargando" class="skeleton-bar" style="height: 40px; margin-top: 0.5rem;"></div>
+            <select v-else v-model="formulario.vehiculo_id" id="vehiculoSelect" required @change="seleccionarVehiculo">
               <option value="" disabled>-- Seleccione su volqueta --</option>
               <option v-for="v in listaVehiculos" :key="v.id" :value="v.id">
                 Placa: {{ v.placa }} - {{ v.marca }} ({{ v.estado }})
@@ -189,6 +190,7 @@ import { decodificarToken } from '@/auth';
 const usuario = decodificarToken()
 const nombreUsuario = ref(usuario?.nombre || '');
 const listaVehiculos = ref([]);
+const cargando = ref(false);
 const vehiculoSeleccionado = ref(false);
 const guardando = ref(false);
 const mensajeExito = ref('');
@@ -232,6 +234,7 @@ onMounted(() => {
 });
 
 const cargarVehiculosDisponibles = async () => {
+  cargando.value = true;
   try {
     const res = await fetch(`${API_URL}/api/conductor/vehiculos-disponibles`, {
       headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -239,6 +242,8 @@ const cargarVehiculosDisponibles = async () => {
     if (res.ok) listaVehiculos.value = await res.json();
   } catch (error) {
     console.error('Fallo la conexión', error);
+  } finally {
+    cargando.value = false;
   }
 };
 
