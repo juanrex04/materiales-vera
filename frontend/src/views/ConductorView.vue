@@ -6,6 +6,8 @@
         <p>Buen día, {{ nombreUsuario }}. Diligencie el estado de todos los componentes del vehiculo antes de iniciar ruta.</p>
       </div>
 
+      <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
+
       <div class="gestion-seccion checklist-container">
         <div v-if="mensajeExito" class="alerta-vacia" style="margin-bottom: 1.5rem;">
           {{ mensajeExito }}
@@ -184,13 +186,15 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { API_URL } from '@/config';
 import { decodificarToken } from '@/auth';
+import { peticion } from '@/api';
+import ErrorBanner from '@/components/ErrorBanner.vue';
 
 const usuario = decodificarToken()
 const nombreUsuario = ref(usuario?.nombre || '');
 const listaVehiculos = ref([]);
 const cargando = ref(false);
+const errorMensaje = ref('');
 const vehiculoSeleccionado = ref(false);
 const guardando = ref(false);
 const mensajeExito = ref('');
@@ -235,13 +239,11 @@ onMounted(() => {
 
 const cargarVehiculosDisponibles = async () => {
   cargando.value = true;
+  errorMensaje.value = '';
   try {
-    const res = await fetch(`${API_URL}/api/conductor/vehiculos-disponibles`, {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    });
-    if (res.ok) listaVehiculos.value = await res.json();
+    listaVehiculos.value = await peticion('/api/conductor/vehiculos-disponibles');
   } catch (error) {
-    console.error('Fallo la conexión', error);
+    errorMensaje.value = error.message;
   } finally {
     cargando.value = false;
   }
@@ -263,21 +265,18 @@ const seleccionarVehiculo = () => {
 
 const enviarChecklist = async () => {
   guardando.value = true;
+  errorMensaje.value = '';
   try {
-    const res = await fetch(`${API_URL}/api/conductor/checklist`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-      body: JSON.stringify(formulario.value)
+    const data = await peticion('/api/conductor/checklist', {
+      metodo: 'POST',
+      cuerpo: formulario.value
     });
-    const data = await res.json();
-    if (res.ok) {
-      mensajeExito.value = "Inspección registrada. Su firma electrónica ha sido aplicada al documento.";
+    if (data) {
+      mensajeExito.value = data.mensaje || "Inspección registrada. Su firma electrónica ha sido aplicada al documento.";
       checklistEnviado.value = true;
-    } else {
-      alert(data.error || 'Error al guardar.');
     }
   } catch (error) {
-    alert('Error de red.');
+    errorMensaje.value = error.message;
   } finally {
     guardando.value = false;
   }

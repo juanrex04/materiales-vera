@@ -7,6 +7,8 @@
                     <button @click="abrirModalNuevo" class="btn-primary">Registrar Vehículo</button>
                 </div>
 
+                <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
+
                 <div class="tabla-contenedor">
                     <table>
                         <thead>
@@ -123,31 +125,27 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { API_URL } from '@/config';
-import { decodificarToken } from '@/auth';
+import { peticion } from '@/api';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
+import ErrorBanner from '@/components/ErrorBanner.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
-
-const usuario = decodificarToken()
-const rolUsuario = ref(usuario?.rol || '');
-const router = useRouter();
 
 const listaVehiculos = ref([]);
 const cargando = ref(false);
 const guardando = ref(false);
+const errorMensaje = ref('');
 const mostrarModal = ref(false);
 const modoEdicion = ref(false);
 const formulario = ref({ id: null, placa: '', marca: '', capacidad_carga_kg: '', estado: 'Disponible', fecha_soat: '', fecha_tecnomecanica: '', fecha_ultimo_cambio_aceite: ''});
 
-onMounted(() => { if (rolUsuario.value !== 'Admin') router.push('/dashboard'); obtenerVehiculos(); });
+onMounted(() => { obtenerVehiculos(); });
 
 const obtenerVehiculos = async () => {
     cargando.value = true;
+    errorMensaje.value = '';
     try {
-        const res = await fetch(`${API_URL}/api/admin/vehiculos`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-        listaVehiculos.value = await res.json();
-    } catch (error) { console.error(error); }
+        listaVehiculos.value = await peticion('/api/admin/vehiculos');
+    } catch (error) { errorMensaje.value = error.message; }
     finally { cargando.value = false; }
 };
 
@@ -166,27 +164,27 @@ const abrirModalEditar = (v) => {
 const cerrarModal = () => mostrarModal.value = false;
 
 const guardarVehiculo = async () => {
-    const url = modoEdicion.value ? `${API_URL}/api/admin/vehiculos/${formulario.value.id}` : `${API_URL}/api/admin/vehiculos`;
     const metodo = modoEdicion.value ? 'PUT' : 'POST';
     guardando.value = true;
+    errorMensaje.value = '';
     try {
-        await fetch(url, {
-            method: metodo,
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify(formulario.value)
+        await peticion(modoEdicion.value ? `/api/admin/vehiculos/${formulario.value.id}` : '/api/admin/vehiculos', {
+            metodo: metodo,
+            cuerpo: formulario.value
         });
         cerrarModal(); obtenerVehiculos();
-    } catch (error) { console.error(error); }
+    } catch (error) { errorMensaje.value = error.message; }
     finally { guardando.value = false; }
 };
 
 const eliminarVehiculo = async (id) => {
     if (!confirm('¿Eliminar este camión?')) return;
     iniciarCarga('Eliminando vehículo...');
+    errorMensaje.value = '';
     try {
-        await fetch(`${API_URL}/api/admin/vehiculos/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        await peticion(`/api/admin/vehiculos/${id}`, { metodo: 'DELETE' });
         obtenerVehiculos();
-    } catch (error) { console.error(error); }
+    } catch (error) { errorMensaje.value = error.message; }
     finally { detenerCarga(); }
 };
 

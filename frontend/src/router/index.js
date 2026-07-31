@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { decodificarToken } from '@/auth';
 import { iniciarCarga, detenerCarga } from '@/loading';
 import LoginView from '../views/LoginView.vue';
 import DashboardView from '../views/DashboardView.vue';
@@ -20,16 +21,6 @@ const router = createRouter({
     { path: '/cambiar-password', name: 'cambiar-password', component: CambiarPasswordView }
   ]
 });
-
-// Helper para decodificar JWT sin librería (solo lectura, no verifica firma)
-function decodificarToken(token) {
-  try {
-    const payload = token.split('.')[1];
-    return JSON.parse(atob(payload));
-  } catch {
-    return null;
-  }
-}
 
 router.beforeEach((to, from) => {
   const token = localStorage.getItem('token');

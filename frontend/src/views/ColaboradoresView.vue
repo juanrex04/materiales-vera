@@ -7,6 +7,8 @@
                     <button @click="abrirModalNuevo" class="btn-primary">Nuevo Colaborador</button>
                 </div>
 
+                <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
+
                 <div class="tabla-contenedor">
                     <table>
                         <thead>
@@ -76,31 +78,27 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { API_URL } from '@/config';
-import { decodificarToken } from '@/auth';
+import { peticion } from '@/api';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
+import ErrorBanner from '@/components/ErrorBanner.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
-
-const usuario = decodificarToken()
-const rolUsuario = ref(usuario?.rol || '');
-const router = useRouter();
 
 const listaColaboradores = ref([]);
 const cargando = ref(false);
+const errorMensaje = ref('');
 const guardando = ref(false);
 const mostrarModal = ref(false);
 const modoEdicion = ref(false);
 const formulario = ref({ id: null, nombre: '', email: '', rol_id: 2, licencia_conducir: '' });
 
-onMounted(() => { if (rolUsuario.value !== 'Admin') router.push('/dashboard'); obtenerColaboradores(); });
+onMounted(() => { obtenerColaboradores(); });
 
 const obtenerColaboradores = async () => {
     cargando.value = true;
+    errorMensaje.value = '';
     try {
-        const res = await fetch(`${API_URL}/api/admin/colaboradores`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-        listaColaboradores.value = await res.json();
-    } catch (error) { console.error(error); }
+        listaColaboradores.value = await peticion('/api/admin/colaboradores');
+    } catch (error) { errorMensaje.value = error.message; }
     finally { cargando.value = false; }
 };
 
@@ -121,32 +119,26 @@ const abrirModalEditar = (c) => {
 const cerrarModal = () => mostrarModal.value = false;
 
 const guardarColaborador = async () => {
-    const url = modoEdicion.value ? `${API_URL}/api/admin/colaboradores/${formulario.value.id}` : `${API_URL}/api/admin/colaboradores`;
+    const url = modoEdicion.value ? `/api/admin/colaboradores/${formulario.value.id}` : '/api/admin/colaboradores';
     const metodo = modoEdicion.value ? 'PUT' : 'POST';
 
     guardando.value = true;
+    errorMensaje.value = '';
     try {
-        await fetch(url, {
-            method: metodo,
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify(formulario.value)
-        });
+        await peticion(url, { metodo: metodo, cuerpo: formulario.value });
         cerrarModal(); obtenerColaboradores();
-    } catch (error) { console.error(error); }
+    } catch (error) { errorMensaje.value = error.message; }
     finally { guardando.value = false; }
 };
 
 const eliminarColaborador = async (id) => {
     if (!confirm('¿Deseas desvincular a este colaborador del sistema?')) return;
     iniciarCarga('Eliminando colaborador...');
+    errorMensaje.value = '';
     try {
-        const res = await fetch(`${API_URL}/api/admin/colaboradores/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-        if (!res.ok) {
-            alert("No se puede eliminar un conductor si tiene un vehículo asignado.");
-        } else {
-            obtenerColaboradores();
-        }
-    } catch (error) { console.error(error); }
+        await peticion(`/api/admin/colaboradores/${id}`, { metodo: 'DELETE' });
+        obtenerColaboradores();
+    } catch (error) { errorMensaje.value = error.message; }
     finally { detenerCarga(); }
 };
 </script>

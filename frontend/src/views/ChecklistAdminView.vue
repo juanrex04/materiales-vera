@@ -4,6 +4,7 @@
       <div class="bienvenida-card">
         <p>Recuerda que para crear un PDF de reporte semanal debes llenar los filtros de acuerdo con lo que necesitas; y al no seleccionar vehiculo y solo fechas será algo general el reporte.</p>
       </div>
+      <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
       <div class="gestion-seccion">
         <div class="titulo-acciones">
           <h2>Control de Inspecciones (Volquetas)</h2>
@@ -318,11 +319,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import html2pdf from 'html2pdf.js';
-import { API_URL } from '@/config';
+import { peticion } from '@/api';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
+import ErrorBanner from '@/components/ErrorBanner.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
 const listaChecklists = ref([]);
 const cargando = ref(false);
+const errorMensaje = ref('');
 const generandoPDF = ref(false);
 const modalVisible = ref(false);
 const checklistSeleccionado = ref(null);
@@ -423,15 +426,11 @@ onMounted(() => {
 
 const cargarChecklists = async () => {
   cargando.value = true;
+  errorMensaje.value = '';
   try {
-    const res = await fetch(`${API_URL}/api/admin/checklists`, {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    });
-    if (res.ok) {
-      listaChecklists.value = await res.json();
-    }
+    listaChecklists.value = await peticion('/api/admin/checklists');
   } catch (error) {
-    console.error('Fallo la conexión con el servidor', error);
+    errorMensaje.value = error.message;
   } finally {
     cargando.value = false;
   }

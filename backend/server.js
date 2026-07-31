@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const mysql = require('mysql2/promise');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -27,9 +28,12 @@ const validar = (req, res, next) => {
   next();
 };
 
+const esErrorDuplicado = (err) => err && err.code === 'ER_DUP_ENTRY';
+
 // ==========================================
 // 1. CONFIGURACIÓN DE MIDDLEWARES Y BD
 // ==========================================
+app.use(helmet());
 app.use(cors({
   origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : 'http://localhost:5173',
   credentials: true
@@ -153,7 +157,10 @@ app.post('/api/admin/colaboradores', verificarToken, esAdmin, [
       [nombre, email, hashedPassword, rol_id, licencia_conducir || null]
     );
     res.status(201).json({ mensaje: 'Colaborador creado exitosamente', id: result.insertId });
-  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
+  } catch (err) {
+    if (esErrorDuplicado(err)) return res.status(400).json({ error: 'Ya existe un colaborador con ese correo electrónico.' });
+    res.status(500).json({ error: 'Error interno en el servidor, notifique administración' });
+  }
 });
 
 app.put('/api/admin/colaboradores/:id', verificarToken, esAdmin, [
@@ -173,7 +180,10 @@ app.put('/api/admin/colaboradores/:id', verificarToken, esAdmin, [
   try {
     await pool.query('UPDATE colaboradores SET nombre = ?, email = ?, rol_id = ?, licencia_conducir = ? WHERE id = ?', [nombre, email, rol_id, licencia_conducir || null, id]);
     res.json({ mensaje: 'Colaborador actualizado' });
-  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
+  } catch (err) {
+    if (esErrorDuplicado(err)) return res.status(400).json({ error: 'Ya existe un colaborador con ese correo electrónico.' });
+    res.status(500).json({ error: 'Error interno en el servidor, notifique administración' });
+  }
 });
 
 app.delete('/api/admin/colaboradores/:id', verificarToken, esAdmin, async (req, res) => {
@@ -239,7 +249,7 @@ app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res)
         SELECT vehiculo_id 
         FROM checklists_diarios 
         WHERE fecha = CURRENT_DATE()
-      ) AND estado != 'En Ruta';
+      ) AND estado = 'Disponible';
     `;
     const [vehiculos] = await pool.query(query);
 
@@ -418,7 +428,10 @@ app.post('/api/admin/vehiculos', verificarToken, esAdmin, [
       [placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado || 'Disponible', fecha_ultimo_cambio_aceite || null]
     );
     res.status(201).json({ mensaje: 'Vehículo registrado', id: result.insertId });
-  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
+  } catch (err) {
+    if (esErrorDuplicado(err)) return res.status(400).json({ error: 'Ya existe un vehículo con esa placa.' });
+    res.status(500).json({ error: 'Error interno en el servidor, notifique administración' });
+  }
 });
 
 // ACTUALIZAR
@@ -455,7 +468,10 @@ app.put('/api/admin/vehiculos/:id', verificarToken, esAdmin, [
       [placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado, fecha_ultimo_cambio_aceite || null, id]
     );
     res.json({ mensaje: 'Vehículo modificado con éxito' });
-  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
+  } catch (err) {
+    if (esErrorDuplicado(err)) return res.status(400).json({ error: 'Ya existe un vehículo con esa placa.' });
+    res.status(500).json({ error: 'Error interno en el servidor, notifique administración' });
+  }
 });
 
 // ELIMINAR

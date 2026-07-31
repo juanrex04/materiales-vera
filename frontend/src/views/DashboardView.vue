@@ -7,6 +7,8 @@
           <p>Desde aquí puedes monitorear el estado operativo y legal de Materiales Vera en tiempo real.</p>
         </div>
 
+        <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
+
         <div class="alertas-seccion">
           <h3>⚠️ Alertas de Documentación Urgente</h3>
           <div v-if="cargando" class="skeleton-grid">
@@ -30,7 +32,8 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { decodificarToken } from '@/auth';
-import { API_URL } from '@/config';
+import { peticion } from '@/api';
+import ErrorBanner from '@/components/ErrorBanner.vue';
 
 const nombreUsuario = ref('');
 const usuario = decodificarToken()
@@ -38,6 +41,7 @@ const rolUsuario = ref(usuario?.rol || '');
 const router = useRouter();
 const alertasDocumentos = ref([]);
 const cargando = ref(false);
+const errorMensaje = ref('');
 
 onMounted(() => {
   nombreUsuario.value = decodificarToken()?.nombre;
@@ -47,11 +51,9 @@ onMounted(() => {
 const obtenerAlertas = async () => {
   alertasDocumentos.value = [];
   cargando.value = true;
+  errorMensaje.value = '';
   try {
-    const res = await fetch(`${API_URL}/api/admin/vehiculos`, {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    });
-    const datos = await res.json();
+    const datos = await peticion('/api/admin/vehiculos');
 
     datos.forEach(v => {
       if (v.soat_estado !== 'OK') {
@@ -78,7 +80,7 @@ const obtenerAlertas = async () => {
         });
       }
     });
-  } catch (error) { console.error(error); }
+  } catch (error) { errorMensaje.value = error.message; }
   finally { cargando.value = false; }
 };
 

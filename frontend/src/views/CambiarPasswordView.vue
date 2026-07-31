@@ -34,8 +34,8 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { API_URL } from '@/config';
 import { decodificarToken } from '@/auth';
+import { peticion } from '@/api';
 import { iniciarCarga, detenerCarga } from '@/loading';
 
 const router = useRouter();
@@ -64,21 +64,13 @@ const cambiarContraseña = async () => {
   cargando.value = true;
   iniciarCarga('Actualizando contraseña...');
   try {
-    const res = await fetch(`${API_URL}/api/cambiar-password`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify({
+    await peticion('/api/cambiar-password', {
+      metodo: 'PUT',
+      cuerpo: {
         password_actual: passwordActual.value,
         password_nuevo: passwordNueva.value
-      })
+      }
     });
-
-    const data = await res.json();
-
-    if (!res.ok) throw new Error(data.error);
 
     localStorage.setItem('debe_cambiar_password', 'false');
     mensajeExito.value = 'Contraseña actualizada. Redirigiendo...';
