@@ -281,6 +281,46 @@ th {
   color: #0369a1;
 }
 
+/*Alertas para el checklist admin*/
+.alert-documentos {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+}
+.alert-documentos h4 {
+  margin: 0 0 10px 0;
+  color: #1e293b;
+}
+.docs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.doc-item {
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 4px solid #22c55e;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.doc-vencido {
+  border-left-color: #ef4444;
+}
+.doc-proximo {
+  border-left-color: #f59e0b;
+}
+.doc-estado {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.doc-ok {
+  color: #16a34a;
+}
+
 /* ========================================================
    6. MODALES Y FORMULARIOS
    ======================================================== */
@@ -336,19 +376,20 @@ textarea {
   background-color: #ffffff;
   font-family: inherit; /* Hereda la fuente Segoe UI del sistema */
   font-size: 0.95rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-
 textarea {
-  min-height: 90px;    
+  min-height: 90px;
   max-height: 180px;
   resize: vertical;
   line-height: 1.5;
 }
 
-input:focus, 
-select:focus, 
+input:focus,
+select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--primary-blue);
@@ -759,15 +800,15 @@ a.btn-nav {
 
   /* Convierte el nav-menu en una persiana desplegable perfectamente centrada */
   .nav-menu {
-    display: none; 
+    display: none;
     flex-direction: column;
-    align-items: center; 
+    align-items: center;
     justify-content: center;
     position: absolute;
-    top: 100%; 
+    top: 100%;
     left: 0;
     right: 0;
-    background-color: var(--bg-header); 
+    background-color: var(--bg-header);
     padding: 1.5rem;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
     z-index: 1000;
@@ -790,18 +831,18 @@ a.btn-nav {
   }
 
   /* Alineación y centrado matemático exacto del texto de tus router-links y botones */
-  .nav-menu .btn-nav, 
+  .nav-menu .btn-nav,
   .nav-menu .btn-logout,
   .nav-menu .btn-secondary,
   .nav-menu .btn-primary {
-    display: flex;         
-    justify-content: center; 
-    align-items: center;     
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 100%;
-    max-width: 90%;          /* Deja un margen elegante a los lados en el celular */
+    max-width: 90%; /* Deja un margen elegante a los lados en el celular */
     padding: 12px;
-    text-decoration: none;   
-    box-sizing: border-box;  
+    text-decoration: none;
+    box-sizing: border-box;
     border-radius: 6px;
   }
 
@@ -825,7 +866,7 @@ a.btn-nav {
     flex-direction: column-reverse;
   }
 
-  .btn-edit{
+  .btn-edit {
     width: 100%;
     margin-bottom: 15px;
   }

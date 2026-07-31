@@ -233,7 +233,7 @@ app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res)
   try {
     // Traemos los carros que NO tienen un checklist registrado con la fecha del día de hoy
     const query = `
-      SELECT id, placa, marca, estado, DATE_FORMAT(fecha_soat, '%Y-%m-%d') as fecha_soat, DATE_FORMAT(fecha_tecnomecanica, '%Y-%m-%d') as fecha_tecnomecanica
+      SELECT id, placa, marca, estado, DATE_FORMAT(fecha_soat, '%Y-%m-%d') as fecha_soat, DATE_FORMAT(fecha_tecnomecanica, '%Y-%m-%d') as fecha_tecnomecanica, DATE_FORMAT(fecha_ultimo_cambio_aceite, '%Y-%m-%d') as fecha_ultimo_cambio_aceite
       FROM vehiculos 
       WHERE id NOT IN (
         SELECT vehiculo_id 
@@ -241,9 +241,40 @@ app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res)
         WHERE fecha = CURRENT_DATE()
       ) AND estado != 'En Ruta';
     `;
-
     const [vehiculos] = await pool.query(query);
-    res.json(vehiculos);
+    
+    const fechaActual = new Date();
+    const listaProcesada = vehiculos.map(v => {
+      // SOAT
+      const soat = new Date(v.fecha_soat);
+      const diasFaltanSoat = Math.ceil((soat - fechaActual) / (1000 * 60 * 60 * 24));
+
+      // TECNO
+      const tecno = new Date(v.fecha_tecnomecanica);
+      const diasFaltanTecno = Math.ceil((tecno - fechaActual) / (1000 * 60 * 60 * 24));
+
+      // ACEITE
+      let diasFaltanAceite;
+      if (v.fecha_ultimo_cambio_aceite) {
+        const aceiteProximo = new Date(v.fecha_ultimo_cambio_aceite);
+        aceiteProximo.setMonth(aceiteProximo.getMonth() + 3);
+        diasFaltanAceite = Math.ceil((aceiteProximo - fechaActual) / (1000 * 60 * 60 * 24));
+      } else {
+        diasFaltanAceite = -999;
+      }
+
+      return {
+        ...v,
+        soat_dias_restantes: diasFaltanSoat,
+        tecno_dias_restantes: diasFaltanTecno,
+        aceite_dias_restantes: diasFaltanAceite,
+        soat_estado: diasFaltanSoat < 0 ? 'VENCIDO' : (diasFaltanSoat <= 15 ? 'PROXIMO' : 'OK'),
+        tecno_estado: diasFaltanTecno < 0 ? 'VENCIDO' : (diasFaltanTecno <= 15 ? 'PROXIMO' : 'OK'),
+        aceite_estado: diasFaltanAceite < 0 ? 'VENCIDO' : (diasFaltanAceite <= 8 ? 'PROXIMO' : 'OK')
+      };
+    });
+    res.json(listaProcesada);
+    //res.json(vehiculos);
   } catch (error) {
     console.error('Error al obtener vehículos:', error);
     res.status(500).json({ error: 'Error en el servidor al consultar vehículos.' });

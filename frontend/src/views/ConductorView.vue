@@ -2,13 +2,13 @@
   <div class="dashboard-container">
     <main class="content">
       <div class="bienvenida-card">
-        <h3>📋 Inspección Preoperacional - Volquetas</h3>
-        <p>Conductor: {{ nombreUsuario }}. Diligencie el estado de todos los componentes antes de iniciar ruta.</p>
+        <h3>Inspección Preoperacional</h3>
+        <p>Buen día, {{ nombreUsuario }}. Diligencie el estado de todos los componentes del vehiculo antes de iniciar ruta.</p>
       </div>
 
       <div class="gestion-seccion checklist-container">
         <div v-if="mensajeExito" class="alerta-vacia" style="margin-bottom: 1.5rem;">
-          ✅ {{ mensajeExito }}
+          {{ mensajeExito }}
         </div>
 
         <form v-if="!checklistEnviado" @submit.prevent="enviarChecklist">
@@ -23,22 +23,49 @@
             </select>
           </div>
 
-          <div v-if="vehiculoActual" class="alert-documentos"
-            style="background: #e0f2fe; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; border-left: 5px solid #0284c7;">
-            <h4 style="margin: 0 0 10px 0; color: #0369a1;">Estado de Documentos</h4>
-            <div style="display: flex; gap: 2rem;">
-              <p style="margin: 0;">
-                <strong>SOAT vence:</strong>
-                {{ formatearFecha(vehiculoActual.fecha_soat) }}
-              </p>
-              <p style="margin: 0;">
-                <strong>Tecnomecánica vence:</strong>
-                {{ formatearFecha(vehiculoActual.fecha_tecnomecanica) }}
-              </p>
+          <div v-if="vehiculoActual" class="alert-documentos">
+            <h4>Estado de Documentos</h4>
+            <p><strong>Importante:</strong> Informe a la administración si alguno de los documentos del vehículo está próximo a vencer o ya se encuentra vencido. Asimismo, recuerde verificar periódicamente el estado y la fecha correspondiente al próximo cambio de aceite del vehículo.</p>
+            <div class="docs-grid">
+              
+              <!-- SOAT -->
+              <div :class="['doc-item', 'doc-' + (vehiculoActual.soat_estado?.toLowerCase() || 'ok')]">
+                <strong>SOAT</strong>
+                <span>{{ formatearFecha(vehiculoActual.fecha_soat) }}</span>
+                <span v-if="vehiculoActual.soat_estado === 'VENCIDO'" class="doc-estado">VENCIDO hace {{
+                  Math.abs(vehiculoActual.soat_dias_restantes) }} días</span>
+                <span v-else-if="vehiculoActual.soat_estado === 'PROXIMO'" class="doc-estado">Faltan {{
+                  vehiculoActual.soat_dias_restantes }} días</span>
+                <span v-else class="doc-estado doc-ok">Al día ({{ vehiculoActual.soat_dias_restantes }} días)</span>
+              </div>
+
+              <!-- TECNOMECÁNICA -->
+              <div :class="['doc-item', 'doc-' + (vehiculoActual.tecno_estado?.toLowerCase() || 'ok')]">
+                <strong>Tecnomecánica</strong>
+                <span>{{ formatearFecha(vehiculoActual.fecha_tecnomecanica) }}</span>
+                <span v-if="vehiculoActual.tecno_estado === 'VENCIDO'" class="doc-estado">VENCIDA hace {{
+                  Math.abs(vehiculoActual.tecno_dias_restantes) }} días</span>
+                <span v-else-if="vehiculoActual.tecno_estado === 'PROXIMO'" class="doc-estado">Faltan {{
+                  vehiculoActual.tecno_dias_restantes }} días</span>
+                <span v-else class="doc-estado doc-ok">Al día ({{ vehiculoActual.tecno_dias_restantes }} días)</span>
+              </div>
+
+              <!-- ACEITE -->
+              <div v-if="vehiculoActual.fecha_ultimo_cambio_aceite"
+                :class="['doc-item', 'doc-' + (vehiculoActual.aceite_estado?.toLowerCase() || 'ok')]">
+                <strong>Cambio Aceite</strong>
+                <span>{{ formatearFecha(vehiculoActual.fecha_ultimo_cambio_aceite) }}</span>
+                <span v-if="vehiculoActual.aceite_estado === 'VENCIDO'" class="doc-estado">VENCIDO hace {{
+                  Math.abs(vehiculoActual.aceite_dias_restantes) }} días</span>
+                <span v-else-if="vehiculoActual.aceite_estado === 'PROXIMO'" class="doc-estado">Faltan {{
+                  vehiculoActual.aceite_dias_restantes }} días</span>
+                <span v-else class="doc-estado doc-ok">Al día ({{ vehiculoActual.aceite_dias_restantes }} días)</span>
+              </div>
+              <div v-else class="doc-item doc-proximo">
+                <strong>Cambio Aceite</strong>
+                <span class="doc-estado">Sin registro de cambio</span>
+              </div>
             </div>
-            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #dc2626; font-weight: bold;">
-              * Si la fecha está próxima a vencer o ya venció, notifique inmediatamente a administración.
-            </p>
           </div>
           <div v-if="vehiculoSeleccionado" class="checklist-box">
             <p class="instruccion">Marque la casilla únicamente si el elemento se encuentra en <strong>BUEN
