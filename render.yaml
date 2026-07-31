@@ -30,16 +30,17 @@ services:
       - key: DB_SSL
         value: "true"      # TiDB Cloud Serverless exige TLS
       - key: JWT_SECRET
-        sync: false        # secreto largo y aleatorio
+        generateValue: true # Render genera un secreto aleatorio
       - key: CORS_ORIGIN
         sync: false        # URL del Static Site del frontend
 
   # ---------- FRONTEND (Vue SPA) ----------
-  - type: static
+  - type: web
+    runtime: static
     name: materiales-vera-frontend
     rootDir: frontend
     buildCommand: npm ci && npm run build
-    publishPath: ./dist
+    staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
         sync: false        # URL del Web Service del backend
