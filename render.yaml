@@ -41,6 +41,11 @@ services:
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
+    routes:
+      # Fallback SPA: cualquier ruta sin recurso sirve index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_API_URL
         sync: false        # URL del Web Service del backend

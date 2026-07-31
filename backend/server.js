@@ -66,6 +66,11 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Ruta raiz: evita el 404 al abrir la URL del backend en el navegador
+app.get('/', (req, res) => {
+  res.json({ nombre: 'Materiales Vera API', estado: 'ok', health: '/health' });
+});
+
 // ==========================================
 // 2. MIDDLEWARES DE SEGURIDAD
 // ==========================================
