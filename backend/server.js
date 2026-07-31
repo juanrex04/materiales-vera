@@ -76,9 +76,9 @@ const esAdmin = (req, res, next) => {
 // 3. MÓDULO DE AUTENTICACIÓN
 // ==========================================
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { error: 'Demasiados intentos. Intente de nuevo más tarde.' }
+  windowMs: 5 * 60 * 1000,
+  max: 3,
+  message: { error: 'Demasiados intentos. Intente de nuevo en 5 minutos.' }
 })
 
 app.post('/api/login',loginLimiter, [

@@ -39,9 +39,9 @@ import { decodificarToken } from '@/auth';
 const router = useRouter();
 const menuAbierto = ref(false);
 
-const nombreUsuario = ref(localStorage.getItem('nombre') || 'Usuario');
 const usuario = decodificarToken();
 const rolUsuario = usuario?.rol;
+const nombreUsuario = ref(usuario?.nombre || 'Usuario');
 
 const cerrarSesion = () => {
     localStorage.clear();
