@@ -184,8 +184,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { API_URL } from '@/config';
+import { decodificarToken } from '@/auth';
 
-const nombreUsuario = ref(localStorage.getItem('nombre'));
+const usuario = decodificarToken()
+const nombreUsuario = ref(usuario?.nombre || '');
 const listaVehiculos = ref([]);
 const vehiculoSeleccionado = ref(false);
 const guardando = ref(false);

@@ -36,7 +36,7 @@ const router = useRouter();
 const alertasDocumentos = ref([]);
 
 onMounted(() => {
-  nombreUsuario.value = localStorage.getItem('nombre');
+  nombreUsuario.value = decodificarToken()?.nombre;
   if (rolUsuario.value === 'Admin') obtenerAlertas();
 });
 
