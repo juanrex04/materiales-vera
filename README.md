@@ -38,10 +38,10 @@ Aplicación full-stack (Vue 3 + Node.js/Express + MySQL) pensada para un uso int
 │   ├── src/views/         # Vistas (Login, Dashboard, Vehículos, etc.)
 │   ├── src/router/        # Configuración de rutas y guards
 │   └── .env.example       # Plantilla de variables de entorno
-├── deploy/                # Despliegue en la nube
-│   ├── schema_remoto.sql  # Esquema + seed para TiDB Cloud
-│   └── GUIA_RENDER.md     # Guía paso a paso de despliegue gratis
-└── render.yaml            # Blueprint de Render (backend + frontend)
+├── deploy/                # Blueprint de Render (backend + frontend)
+│   ├── schema_remoto.sql  # Esquema SQL
+│   └── GUIA_RENDER.md     
+└── render.yaml            
 ```
 
 ## Puesta en marcha local
@@ -81,11 +81,11 @@ Edita `backend/.env` con los datos de tu base de datos y un `JWT_SECRET` propio.
 |---|---|
 | `PORT` | Puerto del servidor (por defecto `3000`) |
 | `DB_HOST` | Host de la base de datos |
-| `DB_PORT` | Puerto (`3306` en MySQL local, `4000` en TiDB) |
+| `DB_PORT` | Puerto (`3306` en MySQL local)|
 | `DB_USER` | Usuario de la base de datos |
 | `DB_PASSWORD` | Contraseña de la base de datos |
 | `DB_DATABASE` | Nombre de la base de datos (`materiales_vera`) |
-| `DB_SSL` | `true` solo si la base de datos exige TLS (TiDB) |
+| `DB_SSL` | `true` solo si la base de datos exige TLS|
 | `JWT_SECRET` | Secreto para firmar los tokens (genera uno largo y aleatorio) |
 | `CORS_ORIGIN` | Orígenes permitidos separados por coma (ej. `http://localhost:5173`) |
 
