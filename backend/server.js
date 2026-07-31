@@ -20,6 +20,10 @@ if (missing.length > 0) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Render y otros proxies envían el X-Forwarded-For; sin esto el rate limiter
+// vería todas las peticiones desde la IP del proxy y bloquearía a todos juntos.
+app.set('trust proxy', 1);
+
 const validar = (req, res, next) => {
   const errores = validationResult(req);
   if (!errores.isEmpty()) {
@@ -42,12 +46,24 @@ app.use(express.json());
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
+  port: process.env.DB_PORT || 3306,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
+});
+
+// Health check para UptimeRobot y Render (no requiere token)
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ estado: 'ok' });
+  } catch {
+    res.status(503).json({ estado: 'error' });
+  }
 });
 
 // ==========================================
@@ -81,7 +97,7 @@ const esAdmin = (req, res, next) => {
 // ==========================================
 const loginLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
-  max: 3,
+  max: 5,
   message: { error: 'Demasiados intentos. Intente de nuevo en 5 minutos.' }
 })
 
@@ -335,14 +351,14 @@ app.post('/api/conductor/checklist', verificarToken, [
     // Insertar el nuevo registro en la base de datos
     const insertQuery = `
       INSERT INTO checklists_diarios (
-    vehiculo_id, colaborador_id, luces_frontales, luces_traseras, direccionales_delanteras, direccionales_traseras, 
+    vehiculo_id, colaborador_id, fecha, hora, luces_frontales, luces_traseras, direccionales_delanteras, direccionales_traseras, 
     espejos_laterales, alarma_retroceso, pito, freno_servicio, freno_emergencia, direccion_suspension, 
     cinturon_seguridad, vidrio_frontal, limpia_brisas, silleteria, indicadores_tablero, baterias_cables, 
     presion_aire, llantas_estado, fugas_hidraulicas, pasadores_suspension, fugas_aire, grapas_chasis, 
     cadena_cardan, acoples_rapidos, mangueras, estado_volco, soporte_volco, tanque_combustible, motor, 
     sistema_cargado, ganchos_compuerta, soportes_buge, documentos, gato, cruceta, taco, caja_herramientas, 
     llanta_repuesto, linterna, senales_carretera, botiquin, extintor, observaciones, apto_para_trabajar
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ) VALUES (?, ?, CURRENT_DATE(), CURRENT_TIME(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
     const values = [

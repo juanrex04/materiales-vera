@@ -1,0 +1,45 @@
+# ============================================================
+# MATERIALES VERA - Blueprint de Render
+# Usa "New > Blueprint" en el Dashboard de Render y apunta a este repo.
+# Se crean los 2 servicios automaticamente.
+# ============================================================
+
+services:
+  # ---------- BACKEND (Node/Express) ----------
+  - type: web
+    name: materiales-vera-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: DB_HOST
+        sync: false        # se completa en el panel (host de TiDB)
+      - key: DB_PORT
+        sync: false        # 4000 para TiDB Cloud Serverless
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_DATABASE
+        sync: false        # nombre de la BD de TiDB
+      - key: DB_SSL
+        value: "true"      # TiDB Cloud Serverless exige TLS
+      - key: JWT_SECRET
+        sync: false        # secreto largo y aleatorio
+      - key: CORS_ORIGIN
+        sync: false        # URL del Static Site del frontend
+
+  # ---------- FRONTEND (Vue SPA) ----------
+  - type: static
+    name: materiales-vera-frontend
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    publishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false        # URL del Web Service del backend
