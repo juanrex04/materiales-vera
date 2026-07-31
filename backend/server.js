@@ -123,26 +123,7 @@ app.post('/api/login',loginLimiter, [
 });
 
 // ==========================================
-// 4. MÓDULO CONDUCTORES
-// ==========================================
-app.get('/api/conductor/mi-vehiculo', verificarToken, async (req, res) => {
-  if (req.usuario.rol !== 'Conductor') return res.status(403).json({ error: 'Ruta exclusiva para conductores.' });
-
-  try {
-    const [vehiculos] = await pool.query(`
-      SELECT v.placa, v.marca, v.capacidad_carga_kg, a.fecha_asignacion 
-      FROM vehiculos v
-      JOIN asignacion_vehiculos a ON v.id = a.vehiculo_id
-      WHERE a.colaborador_id = ? AND a.estado = 'Activa'
-    `, [req.usuario.id]);
-
-    if (vehiculos.length === 0) return res.json({ mensaje: 'No tienes ningún vehículo asignado actualmente.' });
-    res.json(vehiculos[0]);
-  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
-});
-
-// ==========================================
-// 5. MÓDULO ADMIN - CRUD COLABORADORES
+// 4. MÓDULO ADMIN - CRUD COLABORADORES
 // ==========================================
 app.get('/api/admin/colaboradores', verificarToken, esAdmin, async (req, res) => {
   try {
@@ -203,7 +184,7 @@ app.delete('/api/admin/colaboradores/:id', verificarToken, esAdmin, async (req, 
 });
 
 // ==========================================
-// 6. MÓDULO ADMIN - CRUD VEHÍCULOS
+// 5. MÓDULO ADMIN - CRUD VEHÍCULOS
 // ==========================================
 // LECTURA CON CÁLCULO DE VENCIMIENTOS
 app.get('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
@@ -245,7 +226,7 @@ app.get('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
 
 
 // ==========================================
-// 7. CHECKLIST VERIFICACIÓN DIARIA VEHICULO
+// 6. CHECKLIST VERIFICACIÓN DIARIA VEHICULO
 // ==========================================
 // OBTENER VEHICULOS LIBRES
 app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res) => {
@@ -534,7 +515,7 @@ app.put('/api/cambiar-password', verificarToken, [
 });
 
 // ==========================================
-// 8. INICIAR EL SERVIDOR
+// INICIAR EL SERVIDOR
 // ==========================================
 app.listen(PORT, () => {
   console.log(`Servidor de Materiales Vera corriendo de forma segura en: http://localhost:${PORT}`);
