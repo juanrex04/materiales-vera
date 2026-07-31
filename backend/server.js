@@ -25,6 +25,7 @@ const validar = (req, res, next) => {
   }
   next();
 };
+
 // ==========================================
 // 1. CONFIGURACIÓN DE MIDDLEWARES Y BD
 // ==========================================
@@ -167,7 +168,18 @@ app.post('/api/admin/colaboradores', verificarToken, esAdmin, [
   } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
-app.put('/api/admin/colaboradores/:id', verificarToken, esAdmin, async (req, res) => {
+app.put('/api/admin/colaboradores/:id', verificarToken, esAdmin, [
+  body('nombre')
+    .trim()
+    .notEmpty()
+    .withMessage('El nombre es requerido'),
+  body('email')
+    .isEmail()
+    .withMessage('Debe ser un correo electrónico válido'),
+  body('rol_id')
+    .isInt({ min: 1 })
+    .withMessage('El rol asignado no es válido')
+], validar, async (req, res) => {
   const { id } = req.params;
   const { nombre, email, rol_id, licencia_conducir } = req.body;
   try {
@@ -217,7 +229,7 @@ app.get('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
         aceite_dias_restantes: diasFaltanAceite,
         soat_estado: diasFaltanSoat < 0 ? 'VENCIDO' : (diasFaltanSoat <= 15 ? 'PROXIMO' : 'OK'),
         tecno_estado: diasFaltanTecno < 0 ? 'VENCIDO' : (diasFaltanTecno <= 15 ? 'PROXIMO' : 'OK'),
-                aceite_estado: diasFaltanAceite < 0 ? 'VENCIDO' : (diasFaltanAceite <= 8 ? 'PROXIMO' : 'OK')
+        aceite_estado: diasFaltanAceite < 0 ? 'VENCIDO' : (diasFaltanAceite <= 8 ? 'PROXIMO' : 'OK')
       };
     });
     res.json(listaProcesada);
@@ -242,7 +254,7 @@ app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res)
       ) AND estado != 'En Ruta';
     `;
     const [vehiculos] = await pool.query(query);
-    
+
     const fechaActual = new Date();
     const listaProcesada = vehiculos.map(v => {
       // SOAT
@@ -281,12 +293,31 @@ app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res)
   }
 });
 
+const camposBooleano = [
+  'luces_frontales', 'luces_traseras', 'direccionales_delanteras', 'direccionales_traseras',
+  'espejos_laterales', 'alarma_retroceso', 'pito', 'freno_servicio', 'freno_emergencia',
+  'direccion_suspension', 'cinturon_seguridad', 'vidrio_frontal', 'limpia_brisas',
+  'silleteria', 'indicadores_tablero', 'baterias_cables', 'presion_aire', 'llantas_estado',
+  'fugas_hidraulicas', 'pasadores_suspension', 'fugas_aire', 'grapas_chasis', 'cadena_cardan',
+  'acoples_rapidos', 'mangueras', 'estado_volco', 'soporte_volco', 'tanque_combustible',
+  'motor', 'sistema_cargado', 'ganchos_compuerta', 'soportes_buge', 'documentos', 'gato',
+  'cruceta', 'taco', 'caja_herramientas', 'llanta_repuesto', 'linterna', 'senales_carretera',
+  'botiquin', 'extintor'
+];
+
+const validacionesChecklist = camposBooleano.map(campo =>
+  body(campo).isBoolean().withMessage(`El campo ${campo.replace(/_/g, ' ')} debe ser verdadero o falso`)
+);
+
 // GUARDAR CHECKLIST DE CARRO ENVIADO
-app.post('/api/conductor/checklist', verificarToken, async (req, res) => {
+app.post('/api/conductor/checklist', verificarToken, [
+  body('vehiculo_id').isInt({ min: 1 }).withMessage('Vehículo inválido'),
+  ...validacionesChecklist,
+  body('observaciones').optional({ values: 'null' }).trim()
+], validar ,async (req, res) => {
   const data = req.body;
 
   // Extraemos el ID del colaborador autenticado (el conductor)
-  // Nota: Asegúrate de usar la propiedad exacta donde tu middleware de token guarda el ID (ej: req.colaborador.id o req.usuario.id)
   const colaborador_id = req.usuario.id;
 
   // Un carro está apto si cumple con los 5 puntos críticos obligatorios de seguridad
@@ -370,8 +401,8 @@ app.get('/api/admin/checklists', verificarToken, esAdmin, async (req, res) => {
 });
 
 // CREAR
-app.post('/api/admin/vehiculos', verificarToken, esAdmin,[
-   body('placa')
+app.post('/api/admin/vehiculos', verificarToken, esAdmin, [
+  body('placa')
     .trim()
     .notEmpty()
     .withMessage('La placa es requerida'),
@@ -403,7 +434,7 @@ app.post('/api/admin/vehiculos', verificarToken, esAdmin,[
 });
 
 // ACTUALIZAR
-app.put('/api/admin/vehiculos/:id', verificarToken, esAdmin,[
+app.put('/api/admin/vehiculos/:id', verificarToken, esAdmin, [
   param('id')
     .isInt({ min: 1 })
     .withMessage('ID de vehículo inválido'),
@@ -445,25 +476,6 @@ app.delete('/api/admin/vehiculos/:id', verificarToken, esAdmin, async (req, res)
     await pool.query('DELETE FROM vehiculos WHERE id = ?', [req.params.id]);
     res.json({ mensaje: 'Vehículo eliminado de la flota' });
   } catch (err) { res.status(400).json({ error: 'Error al eliminar. Verifique dependencias de asignación.' }); }
-});
-
-// ==========================================
-// 7. MÓDULO ADMIN - CRUD INVENTARIO
-// ==========================================
-app.put('/api/inventario/:id', verificarToken, esAdmin, async (req, res) => {
-  const { id } = req.params;
-  const { nombre_producto, sku, cantidad, ubicacion } = req.body;
-  try {
-    await pool.query('UPDATE inventario SET nombre_producto = ?, sku = ?, cantidad = ?, ubicacion = ? WHERE id = ?', [nombre_producto, sku, cantidad, ubicacion, id]);
-    res.json({ mensaje: 'Inventario actualizado' });
-  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
-});
-
-app.delete('/api/inventario/:id', verificarToken, esAdmin, async (req, res) => {
-  try {
-    await pool.query('DELETE FROM inventario WHERE id = ?', [req.params.id]);
-    res.json({ mensaje: 'Producto eliminado del catálogo' });
-  } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
 
 //MIDDLEWARE GLOBAL PARA ERRORES
