@@ -4,6 +4,7 @@ const mysql = require('mysql2/promise');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { body, param, validationResult } = require('express-validator')
+const { rateLimit } = require('express-rate-limit')
 
 require('dotenv').config();
 
@@ -74,7 +75,13 @@ const esAdmin = (req, res, next) => {
 // ==========================================
 // 3. MÓDULO DE AUTENTICACIÓN
 // ==========================================
-app.post('/api/login', [
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Demasiados intentos. Intente de nuevo más tarde.' }
+})
+
+app.post('/api/login',loginLimiter, [
   body('email')
     .isEmail()
     .withMessage('Debe ser un correo electronico válido'),
@@ -314,7 +321,7 @@ app.post('/api/conductor/checklist', verificarToken, [
   body('vehiculo_id').isInt({ min: 1 }).withMessage('Vehículo inválido'),
   ...validacionesChecklist,
   body('observaciones').optional({ values: 'null' }).trim()
-], validar ,async (req, res) => {
+], validar, async (req, res) => {
   const data = req.body;
 
   // Extraemos el ID del colaborador autenticado (el conductor)
