@@ -35,6 +35,28 @@ const validar = (req, res, next) => {
 const esErrorDuplicado = (err) => err && err.code === 'ER_DUP_ENTRY';
 
 // ==========================================
+// HELPERS DE VALIDACION DEL CHECKLIST DIARIO
+// ==========================================
+async function obtenerVehiculosVerificadosHoy() {
+  const [filas] = await pool.query(
+    'SELECT DISTINCT vehiculo_id FROM checklists_diarios WHERE fecha = CURRENT_DATE()'
+  );
+  return new Set(filas.map(f => f.vehiculo_id));
+}
+
+async function obtenerChecklistConductorHoy(colaboradorId) {
+  const [filas] = await pool.query(
+    `SELECT c.id, v.placa
+     FROM checklists_diarios c
+     JOIN vehiculos v ON v.id = c.vehiculo_id
+     WHERE c.colaborador_id = ? AND c.fecha = CURRENT_DATE()
+     LIMIT 1`,
+    [colaboradorId]
+  );
+  return filas[0] || null;
+}
+
+// ==========================================
 // 1. CONFIGURACIÓN DE MIDDLEWARES Y BD
 // ==========================================
 app.use(helmet());
@@ -262,6 +284,12 @@ app.get('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
 // OBTENER VEHICULOS LIBRES
 app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res) => {
   try {
+    // Si el conductor ya hizo su checklist hoy, no puede registrar otro
+    const checklistConductor = await obtenerChecklistConductorHoy(req.usuario.id);
+    if (checklistConductor) {
+      return res.json({ yaRealizadoHoy: true, vehiculo: { placa: checklistConductor.placa }, vehiculos: [] });
+    }
+
     // Traemos los carros que NO tienen un checklist registrado con la fecha del día de hoy
     const query = `
       SELECT id, placa, marca, estado, DATE_FORMAT(fecha_soat, '%Y-%m-%d') as fecha_soat, DATE_FORMAT(fecha_tecnomecanica, '%Y-%m-%d') as fecha_tecnomecanica, DATE_FORMAT(fecha_ultimo_cambio_aceite, '%Y-%m-%d') as fecha_ultimo_cambio_aceite
@@ -304,8 +332,7 @@ app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res)
         aceite_estado: diasFaltanAceite < 0 ? 'VENCIDO' : (diasFaltanAceite <= 8 ? 'PROXIMO' : 'OK')
       };
     });
-    res.json(listaProcesada);
-    //res.json(vehiculos);
+    res.json({ yaRealizadoHoy: false, vehiculo: null, vehiculos: listaProcesada });
   } catch (error) {
     console.error('Error al obtener vehículos:', error);
     res.status(500).json({ error: 'Error en el servidor al consultar vehículos.' });
@@ -343,14 +370,16 @@ app.post('/api/conductor/checklist', verificarToken, [
   const apto_para_trabajar = (data.freno_servicio && data.freno_emergencia && data.llantas_estado);
 
   try {
-    // Doble validación de seguridad: verificar que no le hayan hecho checklist hoy a ese carro
-    const [existe] = await pool.query(
-      'SELECT id FROM checklists_diarios WHERE vehiculo_id = ? AND fecha = CURRENT_DATE()',
-      [data.vehiculo_id]
-    );
-
-    if (existe.length > 0) {
+    // La volqueta no puede recibir otro checklist en el dia
+    const vehiculosVerificados = await obtenerVehiculosVerificadosHoy();
+    if (vehiculosVerificados.has(Number(data.vehiculo_id))) {
       return res.status(400).json({ error: 'Este vehículo ya fue verificado por otro conductor el día de hoy.' });
+    }
+
+    // El conductor no puede hacer otro checklist hasta el siguiente dia
+    const checklistConductor = await obtenerChecklistConductorHoy(colaborador_id);
+    if (checklistConductor) {
+      return res.status(400).json({ error: 'Ya realizaste tu inspección de hoy. Solo se permite una por día.' });
     }
 
     // Insertar el nuevo registro en la base de datos

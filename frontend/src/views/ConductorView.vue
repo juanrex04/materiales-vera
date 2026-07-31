@@ -241,7 +241,15 @@ const cargarVehiculosDisponibles = async () => {
   cargando.value = true;
   errorMensaje.value = '';
   try {
-    listaVehiculos.value = await peticion('/api/conductor/vehiculos-disponibles');
+    const data = await peticion('/api/conductor/vehiculos-disponibles');
+    if (data.yaRealizadoHoy) {
+      checklistEnviado.value = true;
+      mensajeExito.value = data.vehiculo
+        ? `Ya realizaste tu inspección de hoy en la volqueta ${data.vehiculo.placa}. Vuelve mañana para la próxima inspección.`
+        : 'Ya realizaste tu inspección de hoy. Vuelve mañana para la próxima inspección.';
+      return;
+    }
+    listaVehiculos.value = data.vehiculos;
   } catch (error) {
     errorMensaje.value = error.message;
   } finally {
@@ -276,7 +284,12 @@ const enviarChecklist = async () => {
       checklistEnviado.value = true;
     }
   } catch (error) {
-    errorMensaje.value = error.message;
+    if (error.message.includes('Ya realizaste tu inspección de hoy')) {
+      checklistEnviado.value = true;
+      mensajeExito.value = error.message;
+    } else {
+      errorMensaje.value = error.message;
+    }
   } finally {
     guardando.value = false;
   }
