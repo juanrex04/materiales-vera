@@ -2,7 +2,7 @@
   <div class="dashboard-container">
     <div class="content">
       <div class="bienvenida-card">
-        <p>Recuerda que para crear un PDF de reporte semanal debes llenar los filtros de acuerdo con lo que necesitas; y al no seleccionar vehiculo y solo fechas será algo general el reporte.</p>
+        <p><strong>Importante: </strong>Para generar el reporte semanal en formato PDF, complete los filtros de búsqueda según la información que desee consultar. Si selecciona únicamente el rango de fechas y no especifica un vehículo, el sistema generará un reporte general con la información correspondiente a ese período.</p>
       </div>
       <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
       <div class="gestion-seccion">

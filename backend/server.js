@@ -366,8 +366,8 @@ app.post('/api/conductor/checklist', verificarToken, [
   // Extraemos el ID del colaborador autenticado (el conductor)
   const colaborador_id = req.usuario.id;
 
-  // Un carro está apto si cumple con los 5 puntos críticos obligatorios de seguridad
-  const apto_para_trabajar = (data.freno_servicio && data.freno_emergencia && data.llantas_estado);
+  // Un carro está apto si cumple con los puntos críticos obligatorios de seguridad
+  const apto_para_trabajar = (data.freno_servicio && data.freno_emergencia && data.llantas_estado && data.documentos);
 
   try {
     // La volqueta no puede recibir otro checklist en el dia
