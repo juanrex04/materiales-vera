@@ -298,7 +298,7 @@ app.get('/api/conductor/vehiculos-disponibles', verificarToken, async (req, res)
         SELECT vehiculo_id 
         FROM checklists_diarios 
         WHERE fecha = CURRENT_DATE()
-      ) AND estado = 'Disponible';
+      );
     `;
     const [vehiculos] = await pool.query(query);
 

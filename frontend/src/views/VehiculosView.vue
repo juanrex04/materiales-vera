@@ -95,7 +95,6 @@
                                 <label>Estado:</label>
                                 <select v-model="formulario.estado" required>
                                     <option value="Disponible">Disponible</option>
-                                    <option value="En Ruta">En Ruta</option>
                                     <option value="Mantenimiento">Mantenimiento</option>
                                 </select>
                             </div>
