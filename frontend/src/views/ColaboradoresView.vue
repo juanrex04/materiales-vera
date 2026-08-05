@@ -82,6 +82,7 @@ import { peticion } from '@/api';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
+import { mostrarToast, confirmarAccion } from '@/utils/alertas';
 
 const listaColaboradores = ref([]);
 const cargando = ref(false);
@@ -127,18 +128,30 @@ const guardarColaborador = async () => {
     try {
         await peticion(url, { metodo: metodo, cuerpo: formulario.value });
         cerrarModal(); obtenerColaboradores();
-    } catch (error) { errorMensaje.value = error.message; }
+        mostrarToast('success', modoEdicion.value ? 'Colaborador actualizado' : 'Colaborador registrado');
+    } catch (error) {
+        errorMensaje.value = error.message;
+        mostrarToast('error', 'No se pudo guardar el colaborador', error.message);
+    }
     finally { guardando.value = false; }
 };
 
 const eliminarColaborador = async (id) => {
-    if (!confirm('¿Deseas desvincular a este colaborador del sistema?')) return;
+    const confirmado = await confirmarAccion(
+        'Desvincular colaborador',
+        '¿Deseas desvincular a este colaborador del sistema? Esta acción no se puede deshacer.'
+    );
+    if (!confirmado) return;
     iniciarCarga('Eliminando colaborador...');
     errorMensaje.value = '';
     try {
         await peticion(`/api/admin/colaboradores/${id}`, { metodo: 'DELETE' });
         obtenerColaboradores();
-    } catch (error) { errorMensaje.value = error.message; }
+        mostrarToast('success', 'Colaborador desvinculado');
+    } catch (error) {
+        errorMensaje.value = error.message;
+        mostrarToast('error', 'No se pudo desvincular el colaborador', error.message);
+    }
     finally { detenerCarga(); }
 };
 </script>

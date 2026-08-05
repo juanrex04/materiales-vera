@@ -189,6 +189,7 @@ import { ref, onMounted } from 'vue';
 import { decodificarToken } from '@/auth';
 import { peticion } from '@/api';
 import ErrorBanner from '@/components/ErrorBanner.vue';
+import { mostrarAlerta, mostrarToast } from '@/utils/alertas';
 
 const usuario = decodificarToken()
 const nombreUsuario = ref(usuario?.nombre || '');
@@ -280,15 +281,22 @@ const enviarChecklist = async () => {
       cuerpo: formulario.value
     });
     if (data) {
+      await mostrarAlerta(
+        'success',
+        'Inspección registrada',
+        data.mensaje || 'Su firma electrónica ha sido aplicada al documento.'
+      );
       mensajeExito.value = data.mensaje || "Inspección registrada. Su firma electrónica ha sido aplicada al documento.";
       checklistEnviado.value = true;
     }
   } catch (error) {
     if (error.message.includes('Ya realizaste tu inspección de hoy')) {
+      await mostrarAlerta('info', 'Inspección ya realizada', error.message);
       checklistEnviado.value = true;
       mensajeExito.value = error.message;
     } else {
       errorMensaje.value = error.message;
+      mostrarToast('error', 'No se pudo guardar la inspección', error.message);
     }
   } finally {
     guardando.value = false;

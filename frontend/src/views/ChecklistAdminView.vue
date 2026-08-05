@@ -2,7 +2,7 @@
   <div class="dashboard-container">
     <div class="content">
       <div class="bienvenida-card">
-        <p><strong>Importante: </strong>Para generar el reporte semanal en formato PDF, complete los filtros de búsqueda según la información que desee consultar. Si selecciona únicamente el rango de fechas y no especifica un vehículo, el sistema generará un reporte general con la información correspondiente a ese período.</p>
+        <p><strong>Importante: </strong>Para generar el reporte semanal en formato PDF, seleccione la <strong>placa del vehículo</strong> y complete el <strong>rango de fechas</strong> que desee consultar. Sin estos tres campos el sistema no generará el PDF.</p>
       </div>
       <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
       <div class="gestion-seccion">
@@ -25,6 +25,14 @@
           <div class="form-group filtro-item">
             <label>Fecha Hasta:</label>
             <input type="date" v-model="filtros.fechaFin" class="input-busqueda" />
+          </div>
+
+          <div class="form-group filtro-item">
+            <label>Placa:</label>
+            <select v-model="filtros.placa" class="input-busqueda">
+              <option value="">Seleccione la placa...</option>
+              <option v-for="v in listaVehiculos" :key="v.id" :value="v.placa">{{ v.placa }} ({{ v.marca }})</option>
+            </select>
           </div>
 
           <div class="form-group filtro-item">
@@ -452,10 +460,12 @@
 import { ref, onMounted, computed } from 'vue';
 import html2pdf from 'html2pdf.js';
 import { peticion } from '@/api';
+import { mostrarAlerta, mostrarToast } from '@/utils/alertas';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
 const listaChecklists = ref([]);
+const listaVehiculos = ref([]);
 const cargando = ref(false);
 const errorMensaje = ref('');
 const generandoPDF = ref(false);
@@ -464,6 +474,7 @@ const checklistSeleccionado = ref(null);
 
 const filtros = ref({
   texto: '',
+  placa: '',
   fechaInicio: '',
   fechaFin: '',
   estado: 'todos'
@@ -502,8 +513,13 @@ const formatearFecha = (fecha) => {
 // LÓGICA DE FILTRADO
 const checklistsFiltrados = computed(() => {
   return listaChecklists.value.filter((chk) => {
-    const termino = filtros.value.texto.toLowerCase();
-    const coincideTexto = chk.conductor.toLowerCase().includes(termino) || chk.placa.toLowerCase().includes(termino);
+    let coincideTexto = true;
+    if (filtros.value.placa) {
+      coincideTexto = chk.placa === filtros.value.placa;
+    } else {
+      const termino = filtros.value.texto.toLowerCase();
+      coincideTexto = chk.conductor.toLowerCase().includes(termino) || chk.placa.toLowerCase().includes(termino);
+    }
 
     let coincideFecha = true;
     if (filtros.value.fechaInicio) {
@@ -523,23 +539,30 @@ const checklistsFiltrados = computed(() => {
 
 //VARIABLES DEL PDF (Que dependen de los filtros)
 const placaPDF = computed(() => {
-  // Si hay reportes filtrados, tomamos la placa real del primer registro
-  if (checklistsFiltrados.value.length > 0 && checklistsFiltrados.value[0].placa) {
-    return checklistsFiltrados.value[0].placa.toUpperCase();
+  // Si hay una placa seleccionada en los filtros, la usamos directamente
+  if (filtros.value.placa) {
+    return filtros.value.placa.toUpperCase();
   }
   return 'Todas (Filtre por placa)';
 });
 
+const vehiculoSeleccionado = computed(() => {
+  if (!filtros.value.placa) return null;
+  return listaVehiculos.value.find((v) => v.placa === filtros.value.placa) || null;
+});
+
 const fechaSoatPDF = computed(() => {
-  if (checklistsFiltrados.value.length > 0 && checklistsFiltrados.value[0].fecha_soat) {
-    return formatearFecha(checklistsFiltrados.value[0].fecha_soat);
+  const veh = vehiculoSeleccionado.value;
+  if (veh && veh.fecha_soat) {
+    return formatearFecha(veh.fecha_soat);
   }
   return 'N/A';
 });
 
 const fechaTecnoPDF = computed(() => {
-  if (checklistsFiltrados.value.length > 0 && checklistsFiltrados.value[0].fecha_tecnomecanica) {
-    return formatearFecha(checklistsFiltrados.value[0].fecha_tecnomecanica);
+  const veh = vehiculoSeleccionado.value;
+  if (veh && veh.fecha_tecnomecanica) {
+    return formatearFecha(veh.fecha_tecnomecanica);
   }
   return 'N/A';
 });
@@ -591,7 +614,16 @@ const reporteResumen = computed(() => {
 // CARGA DE DATOS
 onMounted(() => {
   cargarChecklists();
+  cargarVehiculos();
 });
+
+const cargarVehiculos = async () => {
+  try {
+    listaVehiculos.value = await peticion('/api/admin/vehiculos');
+  } catch (error) {
+    console.error('Error cargando vehículos', error);
+  }
+};
 
 const cargarChecklists = async () => {
   cargando.value = true;
@@ -607,9 +639,35 @@ const cargarChecklists = async () => {
 
 const limpiarFiltros = () => {
   filtros.value.texto = '';
+  filtros.value.placa = '';
   filtros.value.fechaInicio = '';
   filtros.value.fechaFin = '';
   filtros.value.estado = 'todos';
+};
+
+//VALIDA QUE EL PDF SEMANAL TENGA PLACA (REGISTRADA) Y RANGO DE FECHAS COMPLETO
+const validarPDFSemanal = () => {
+  const faltantes = [];
+  if (!filtros.value.placa) faltantes.push('Placa');
+  if (!filtros.value.fechaInicio) faltantes.push('Fecha Desde');
+  if (!filtros.value.fechaFin) faltantes.push('Fecha Hasta');
+
+  if (faltantes.length > 0) {
+    return `Faltan los campos ${faltantes.join(', ')}.`;
+  }
+
+  const placaRegistrada = listaVehiculos.value.some(
+    (v) => v.placa.toLowerCase() === filtros.value.placa.toLowerCase()
+  );
+  if (!placaRegistrada) {
+    return `La placa ${filtros.value.placa.toUpperCase()} no está registrada en el sistema.`;
+  }
+
+  if (filtros.value.fechaInicio > filtros.value.fechaFin) {
+    return 'La Fecha Desde no puede ser posterior a la Fecha Hasta.';
+  }
+
+  return '';
 };
 
 //ESTRUCTURA DESGLOSADA DEL PDF SEMANAL
@@ -712,8 +770,18 @@ const agregarPiePagina = (pdf) => {
 };
 
 const generarPDFSemanal = async () => {
+  const errorValidacion = validarPDFSemanal();
+  if (errorValidacion) {
+    await mostrarAlerta('warning', 'No se puede generar el PDF semanal', errorValidacion);
+    return;
+  }
+
   if (checklistsFiltrados.value.length === 0) {
-    alert("No hay reportes para exportar. Seleccione una placa y un rango de fechas válido.");
+    await mostrarAlerta(
+      'info',
+      'Sin reportes para exportar',
+      'No hay reportes para exportar. Verifique la placa y el rango de fechas seleccionado.'
+    );
     return;
   }
 
@@ -723,7 +791,7 @@ const generarPDFSemanal = async () => {
     const elemento = document.getElementById('matriz-pdf');
     const opciones = {
       margin: 10,
-      filename: `Matriz_Semanal_${filtros.value.texto || 'General'}.pdf`,
+      filename: `Matriz_Semanal_${filtros.value.placa.toUpperCase()}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
@@ -732,8 +800,10 @@ const generarPDFSemanal = async () => {
 
     await precargarLogo();
     await html2pdf().set(opciones).from(elemento).toPdf().get('pdf').then(agregarPiePagina).save();
+    await mostrarToast('success', 'PDF semanal generado correctamente');
   } catch (error) {
     console.error('Error generando PDF', error);
+    await mostrarAlerta('error', 'Error generando el PDF', 'Ocurrió un problema al generar el PDF. Inténtelo de nuevo.');
   } finally {
     detenerCarga();
     generandoPDF.value = false;
@@ -758,8 +828,10 @@ const descargarPDF = async () => {
 
     await precargarLogo();
     await html2pdf().set(opciones).from(elemento).toPdf().get('pdf').then(agregarPiePagina).save();
+    await mostrarToast('success', 'Reporte generado correctamente');
   } catch (error) {
     console.error('Error generando PDF', error);
+    await mostrarAlerta('error', 'Error generando el PDF', 'Ocurrió un problema al generar el reporte. Inténtelo de nuevo.');
   } finally {
     detenerCarga();
     generandoPDF.value = false;

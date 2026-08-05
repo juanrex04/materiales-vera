@@ -128,6 +128,7 @@ import { peticion } from '@/api';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
+import { mostrarToast, confirmarAccion } from '@/utils/alertas';
 
 const listaVehiculos = ref([]);
 const cargando = ref(false);
@@ -172,18 +173,30 @@ const guardarVehiculo = async () => {
             cuerpo: formulario.value
         });
         cerrarModal(); obtenerVehiculos();
-    } catch (error) { errorMensaje.value = error.message; }
+        mostrarToast('success', modoEdicion.value ? 'Vehículo actualizado' : 'Vehículo registrado');
+    } catch (error) {
+        errorMensaje.value = error.message;
+        mostrarToast('error', 'No se pudo guardar el vehículo', error.message);
+    }
     finally { guardando.value = false; }
 };
 
 const eliminarVehiculo = async (id) => {
-    if (!confirm('¿Eliminar este camión?')) return;
+    const confirmado = await confirmarAccion(
+        'Eliminar vehículo',
+        '¿Estás seguro de eliminar este camión? Esta acción no se puede deshacer.'
+    );
+    if (!confirmado) return;
     iniciarCarga('Eliminando vehículo...');
     errorMensaje.value = '';
     try {
         await peticion(`/api/admin/vehiculos/${id}`, { metodo: 'DELETE' });
         obtenerVehiculos();
-    } catch (error) { errorMensaje.value = error.message; }
+        mostrarToast('success', 'Vehículo eliminado');
+    } catch (error) {
+        errorMensaje.value = error.message;
+        mostrarToast('error', 'No se pudo eliminar el vehículo', error.message);
+    }
     finally { detenerCarga(); }
 };
 
