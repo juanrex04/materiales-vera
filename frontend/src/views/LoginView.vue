@@ -1,6 +1,10 @@
 <template>
   <div class="login-container">
-    <div class="login-box">
+    <div class="login-layout">
+      <div class="login-brand">
+        <img class="login-logo" src="/logo.png" alt="VERA S.A.S." />
+      </div>
+      <div class="login-box">
       <h2>Materiales Vera</h2>
       <p>Ingresa tus credenciales</p>
 
@@ -21,6 +25,7 @@
           {{ cargando ? 'Conectando...' : 'Iniciar Sesión' }}
         </button>
       </form>
+      </div>
     </div>
   </div>
 </template>

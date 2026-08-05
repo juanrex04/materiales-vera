@@ -46,6 +46,22 @@ body {
   position: relative; /* OBLIGATORIO: Para que el menú móvil se posicione correctamente abajo */
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.brand h2 {
+  margin: 0;
+}
+
 .nav-menu {
   display: flex;
   align-items: center;
@@ -412,6 +428,21 @@ textarea:focus {
   height: 100vh;
   background-color: var(--bg-body);
 }
+.login-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 3.5rem;
+  width: 100%;
+  max-width: 1000px;
+  padding: 1.5rem;
+}
+.login-brand {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
 .login-box {
   background: white;
   padding: 2rem;
@@ -420,6 +451,12 @@ textarea:focus {
   width: 90%;
   max-width: 400px;
   text-align: center;
+}
+.login-logo {
+  width: 340px;
+  height: 340px;
+  object-fit: contain;
+  display: block;
 }
 .login-box button {
   width: 100%;
@@ -788,6 +825,19 @@ a.btn-nav {
   /* Activa la visualización del botón hamburguesa */
   .hamburger {
     display: block;
+  }
+
+  /* Login: logo arriba y formulario debajo, logo más pequeño */
+  .login-layout {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .login-brand {
+    justify-content: center;
+  }
+  .login-logo {
+    width: 100px;
+    height: 100px;
   }
 
   /* Evita que el título y la hamburguesa se apilen verticalmente */

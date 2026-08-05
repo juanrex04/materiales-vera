@@ -1,6 +1,9 @@
 <template>
     <header class="header">
-        <h2>Materiales Vera - Portal</h2>
+        <div class="brand">
+            <img class="brand-logo" src="/logo.png" alt="VERA S.A.S." />
+            <h2>Materiales Vera - Portal</h2>
+        </div>
         
         <button class="hamburger" @click="menuAbierto = !menuAbierto">
             {{ menuAbierto ? '✖' : '☰' }}
