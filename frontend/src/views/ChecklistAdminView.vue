@@ -239,79 +239,211 @@
   </div>
 
   <div style="display: none;">
-    <div id="matriz-pdf" style="padding: 20px; font-family: Arial, sans-serif; font-size: 10px; color: black;">
+    <!-- ============ PLANTILLA: REPORTE INDIVIDUAL ============ -->
+    <div id="reporte-impresion"
+      style="width: 100%; font-family: Arial, Helvetica, sans-serif; font-size: 9px; color: #1e293b;">
 
-      <div style="text-align: center; margin-bottom: 10px;">
-        <h2 style="margin: 0;">INSPECCIÓN PREOPERACIONAL VEHÍCULOS (VOLQUETAS)</h2>
-        <h3 style="margin: 5px 0;">VERA S.A.S</h3>
-      </div>
-
-      <table border="1" style="width: 100%; border-collapse: collapse; margin-bottom: 10px; text-align: left;">
+      <table style="width: 100%; border-collapse: collapse;">
         <tbody>
           <tr>
-            <td style="padding: 5px; width: 50%;"><strong>PLACA DEL VEHÍCULO:</strong> {{ placaPDF }}</td>
-            <td style="padding: 5px; width: 50%;"><strong>FECHA (Semana):</strong> {{
-              formatearFecha(filtros.fechaInicio)
-            }} al {{ formatearFecha(filtros.fechaFin) }}</td>
+            <td style="width: 15%; vertical-align: middle;">
+              <img src="/logo.png" alt="VERA S.A.S." style="width: 55px; height: 55px;" />
+            </td>
+            <td style="vertical-align: middle; text-align: center;">
+              <div style="font-size: 16px; font-weight: bold; color: #1e3a8a;">VERA S.A.S.</div>
+              <div style="font-size: 9px; color: #475569;">Sistema de Gestión de Flota – Materiales Vera</div>
+            </td>
+            <td style="width: 24%; vertical-align: middle; text-align: right; font-size: 8px; color: #475569;">
+              <strong>N° Doc:</strong> {{ numeroDocumento }}<br />
+              <strong>Generado:</strong> {{ fechaGeneracion }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="border-bottom: 2px solid #1e3a8a; margin-bottom: 8px;"></div>
+
+      <div style="text-align: center; margin-bottom: 8px;">
+        <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">REPORTE DE INSPECCIÓN PREOPERACIONAL DE VEHÍCULO</span>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
+        <tbody>
+          <tr>
+            <td style="width: 50%; padding: 4px; border: 1px solid #94a3b8; background-color: #f1f5f9;">
+              <strong>Conductor:</strong> {{ checklistSeleccionado ? checklistSeleccionado.conductor : '' }}
+            </td>
+            <td style="padding: 4px; border: 1px solid #94a3b8; background-color: #f1f5f9;">
+              <strong>Vehículo:</strong> {{ checklistSeleccionado ? checklistSeleccionado.placa + ' (' + checklistSeleccionado.marca + ')' : '' }}
+            </td>
           </tr>
           <tr>
-            <td style="padding: 5px;"><strong>SOAT Vence:</strong> {{ fechaSoatPDF }}</td>
-            <td style="padding: 5px;"><strong>TECNOMECÁNICA Vence:</strong> {{ fechaTecnoPDF }}</td>
+            <td style="padding: 4px; border: 1px solid #94a3b8;">
+              <strong>Fecha de Revisión:</strong> {{ checklistSeleccionado ? formatearFecha(checklistSeleccionado.fecha_formateada) : '' }}
+            </td>
+            <td style="padding: 4px; border: 1px solid #94a3b8;">
+              <strong>Hora:</strong> {{ checklistSeleccionado ? checklistSeleccionado.hora : '' }}
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding: 4px; border: 1px solid #94a3b8;">
+              <strong>Resultado:</strong>
+              <span v-if="checklistSeleccionado"
+                style="font-weight: bold; padding: 2px 8px; color: #ffffff;"
+                :style="{ backgroundColor: checklistSeleccionado.apto_para_trabajar ? '#16a34a' : '#dc2626' }">
+                {{ checklistSeleccionado.apto_para_trabajar ? 'VEHÍCULO APTO PARA TRABAJAR' : 'NO APTO – REQUIERE REVISIÓN' }}
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>
 
-      <table border="1" style="width: 100%; border-collapse: collapse; text-align: center; font-size: 9px;">
-        <thead style="background-color: #e2e8f0;">
-          <tr>
-            <th style="padding: 5px; width: 10%;">ITEM</th>
-            <th style="padding: 5px; width: 34%;">CONCEPTO</th>
-            <th style="width: 8%;">LUNES</th>
-            <th style="width: 8%;">MARTES</th>
-            <th style="width: 8%;">MIÉRCOLES</th>
-            <th style="width: 8%;">JUEVES</th>
-            <th style="width: 8%;">VIERNES</th>
-            <th style="width: 8%;">SÁBADO</th>
-            <th style="width: 8%;">DOMINGO</th>
+      <table v-for="cat in categoriasRevision" :key="'t-' + cat.titulo"
+        style="width: 100%; border-collapse: collapse; margin-top: 6px; page-break-inside: avoid; break-inside: avoid;">
+        <thead>
+          <tr style="background-color: #1e3a8a; color: #ffffff;">
+            <th colspan="2" style="padding: 4px; text-align: left;">{{ cat.titulo }}</th>
           </tr>
         </thead>
         <tbody>
-          <template v-for="cat in categoriasRevision" :key="cat.titulo">
-            <tr v-for="(item, index) in cat.items" :key="item.key">
-              <td v-if="index === 0" :rowspan="cat.items.length" style="font-weight: bold; vertical-align: middle;">
-                {{ cat.titulo }}
-              </td>
-              <td style="text-align: center; padding: 3px;">
-                {{ item.label }}
-              </td>
-              <td v-for="dia in 7" :key="dia">
-                {{ obtenerValorMatriz(item.key, dia) }}
-              </td>
-            </tr>
-          </template>
+          <tr v-for="item in cat.items" :key="item.key">
+            <td style="padding: 4px; border: 1px solid #cbd5e1;">{{ item.label }}</td>
+            <td
+              style="width: 12%; padding: 4px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #ffffff;"
+              :style="{ backgroundColor: (checklistSeleccionado && checklistSeleccionado[item.key]) ? '#16a34a' : '#dc2626' }">
+              {{ checklistSeleccionado && checklistSeleccionado[item.key] ? 'OK' : 'ERROR' }}
+            </td>
+          </tr>
         </tbody>
       </table>
 
-      <div style="margin-top: 15px;">
+      <table style="width: 100%; border-collapse: collapse; margin-top: 8px;">
+        <tbody>
+          <tr>
+            <td style="padding: 4px; border: 1px solid #94a3b8; text-align: center;">
+              <strong>Total puntos:</strong> {{ reporteResumen.total }}
+            </td>
+            <td style="padding: 4px; border: 1px solid #94a3b8; text-align: center; background-color: #dcfce7;">
+              <strong>OK:</strong> {{ reporteResumen.ok }}
+            </td>
+            <td style="padding: 4px; border: 1px solid #94a3b8; text-align: center; background-color: #fee2e2;">
+              <strong>ERROR:</strong> {{ reporteResumen.error }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top: 8px;">
+        <strong>Novedades y Observaciones del Conductor:</strong>
+        <div style="min-height: 35px; border: 1px solid #94a3b8; padding: 5px; margin-top: 3px;">
+          {{ (checklistSeleccionado && checklistSeleccionado.observaciones) || 'Ninguna observación registrada.' }}
+        </div>
+      </div>
+
+      <div style="margin-top: 28px; display: flex; justify-content: space-between;">
+        <div style="width: 45%; border-top: 1px solid #334155; padding-top: 5px;">
+          <strong>{{ checklistSeleccionado ? checklistSeleccionado.conductor : '' }}</strong><br />
+          Firma del Conductor con Cédula
+        </div>
+        <div style="width: 45%; border-top: 1px solid #334155; padding-top: 5px;">
+          <strong>Administrador / Jefe de Operaciones</strong><br />
+          Firma y sello
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PLANTILLA: MATRIZ SEMANAL ============ -->
+    <div id="matriz-pdf"
+      style="width: 100%; font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #1e293b;">
+
+      <table style="width: 100%; border-collapse: collapse;">
+        <tbody>
+          <tr>
+            <td style="width: 15%; vertical-align: middle;">
+              <img src="/logo.png" alt="VERA S.A.S." style="width: 50px; height: 50px;" />
+            </td>
+            <td style="vertical-align: middle; text-align: center;">
+              <div style="font-size: 14px; font-weight: bold; color: #1e3a8a;">VERA S.A.S.</div>
+              <div style="font-size: 8px; color: #475569;">Sistema de Gestión de Flota – Materiales Vera</div>
+            </td>
+            <td style="width: 24%; vertical-align: middle; text-align: right; font-size: 8px; color: #475569;">
+              <strong>N° Doc:</strong> {{ numeroMatriz }}<br />
+              <strong>Generado:</strong> {{ fechaGeneracion }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="border-bottom: 2px solid #1e3a8a; margin-bottom: 6px;"></div>
+
+      <div style="text-align: center; margin-bottom: 6px;">
+        <span style="font-size: 12px; font-weight: bold; color: #1e3a8a;">MATRIZ SEMANAL DE INSPECCIONES PREOPERACIONALES</span>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
+        <tbody>
+          <tr>
+            <td style="width: 50%; padding: 3px; border: 1px solid #94a3b8; background-color: #f1f5f9;">
+              <strong>PLACA DEL VEHÍCULO:</strong> {{ placaPDF }}
+            </td>
+            <td style="padding: 3px; border: 1px solid #94a3b8; background-color: #f1f5f9;">
+              <strong>FECHA (Semana):</strong> {{ formatearFecha(filtros.fechaInicio) }} al {{
+                formatearFecha(filtros.fechaFin) }}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 3px; border: 1px solid #94a3b8;"><strong>SOAT Vence:</strong> {{ fechaSoatPDF }}</td>
+            <td style="padding: 3px; border: 1px solid #94a3b8;"><strong>TECNOMECÁNICA Vence:</strong> {{ fechaTecnoPDF }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table v-for="cat in categoriasRevision" :key="'tm-' + cat.titulo"
+        style="width: 100%; border-collapse: collapse; text-align: center; margin-top: 4px; page-break-inside: avoid; break-inside: avoid;">
+        <thead>
+          <tr style="background-color: #1e3a8a; color: #ffffff;">
+            <th colspan="8" style="padding: 3px; text-align: left;">{{ cat.titulo }}</th>
+          </tr>
+          <tr style="background-color: #e2e8f0; color: #1e293b;">
+            <th style="padding: 3px; text-align: left;">CONCEPTO</th>
+            <th style="padding: 3px;">LUN</th>
+            <th style="padding: 3px;">MAR</th>
+            <th style="padding: 3px;">MIÉ</th>
+            <th style="padding: 3px;">JUE</th>
+            <th style="padding: 3px;">VIE</th>
+            <th style="padding: 3px;">SÁB</th>
+            <th style="padding: 3px;">DOM</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in cat.items" :key="item.key">
+            <td style="width: 35%; text-align: left; border: 1px solid #cbd5e1; padding: 2px;">{{ item.label }}</td>
+            <td v-for="dia in 7" :key="dia"
+              style="width: 9%; border: 1px solid #cbd5e1; padding: 2px; font-weight: bold; color: #ffffff;"
+              :style="{ backgroundColor: obtenerValorMatriz(item.key, dia) === 'OK' ? '#16a34a' : (obtenerValorMatriz(item.key, dia) === 'ERROR' ? '#dc2626' : '#f8fafc') }">
+              {{ obtenerValorMatriz(item.key, dia) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="margin-top: 6px;">
         <strong>Observaciones de la Semana:</strong>
-        <div style="min-height: 40px; border: 1px solid #ccc; padding: 5px; margin-top: 5px;">
-          <p v-for="chk in checklistsFiltrados" :key="'obs' + chk.id" style="font-size: 9px; margin: 2px 0;">
+        <div style="min-height: 30px; border: 1px solid #94a3b8; padding: 4px; margin-top: 3px;">
+          <p v-for="chk in checklistsFiltrados" :key="'obs' + chk.id" style="margin: 2px 0;">
             <span v-if="chk.observaciones"><strong>{{ formatearFecha(chk.fecha_formateada) }}:</strong> {{
               chk.observaciones }}</span>
           </p>
         </div>
       </div>
 
-      <div style="margin-top: 40px; display: flex; justify-content: space-between;">
-        <div style="width: 45%; border-top: 1px solid black; padding-top: 5px;">
-          <strong>Realizado Por (Nombre):</strong><br>
+      <div style="margin-top: 28px; display: flex; justify-content: space-between;">
+        <div style="width: 45%; border-top: 1px solid #334155; padding-top: 5px;">
+          <strong>Realizado Por (Nombre):</strong><br />
           {{ conductorFrecuentePDF }}
         </div>
-        <div style="width: 45%; border-top: 1px solid black; padding-top: 5px;">
+        <div style="width: 45%; border-top: 1px solid #334155; padding-top: 5px;">
           <strong>Firma del Conductor Con Cédula:</strong>
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -419,6 +551,43 @@ const conductorFrecuentePDF = computed(() => {
   return '';
 });
 
+//DATOS ADMINISTRATIVOS DE LOS DOCUMENTOS PDF
+const fechaGeneracion = computed(() => {
+  const ahora = new Date();
+  const dd = String(ahora.getDate()).padStart(2, '0');
+  const mm = String(ahora.getMonth() + 1).padStart(2, '0');
+  const yyyy = ahora.getFullYear();
+  const hh = String(ahora.getHours()).padStart(2, '0');
+  const min = String(ahora.getMinutes()).padStart(2, '0');
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+});
+
+const numeroDocumento = computed(() => {
+  const chk = checklistSeleccionado.value;
+  if (!chk) return '---';
+  return `INSP-${String(chk.placa).toUpperCase()}-${chk.fecha_formateada}`;
+});
+
+const numeroMatriz = computed(() => {
+  const desde = filtros.value.fechaInicio || 'YYYY-MM-DD';
+  const hasta = filtros.value.fechaFin || 'YYYY-MM-DD';
+  return `MAT-${desde}-${hasta}`;
+});
+
+const reporteResumen = computed(() => {
+  const chk = checklistSeleccionado.value;
+  if (!chk) return { total: 0, ok: 0, error: 0 };
+  let total = 0;
+  let ok = 0;
+  categoriasRevision.forEach(cat => {
+    cat.items.forEach(item => {
+      total++;
+      if (chk[item.key]) ok++;
+    });
+  });
+  return { total, ok, error: total - ok };
+});
+
 // CARGA DE DATOS
 onMounted(() => {
   cargarChecklists();
@@ -446,7 +615,7 @@ const limpiarFiltros = () => {
 //ESTRUCTURA DESGLOSADA DEL PDF SEMANAL
 const categoriasRevision = [
   {
-    titulo: 'LUCES',
+    titulo: 'LUCES Y SEGURIDAD',
     items: [
       { key: 'luces_frontales', label: 'Frontales de servicio (altas y bajas)' },
       { key: 'luces_traseras', label: 'Traseras de trabajo (Reflector)' },
@@ -458,57 +627,53 @@ const categoriasRevision = [
     ]
   },
   {
-    titulo: 'CABINA',
+    titulo: 'CABINA Y FRENOS',
     items: [
       { key: 'freno_servicio', label: 'Freno de servicio' },
       { key: 'freno_emergencia', label: 'Freno de emergencia' },
       { key: 'direccion_suspension', label: 'Dirección/suspensión (terminales)' },
-      { key: 'cinturon_seguridad', label: 'Cinturon de seguridad' },
+      { key: 'cinturon_seguridad', label: 'Cinturón de seguridad' },
       { key: 'vidrio_frontal', label: 'Vidrio frontal (en buen estado)' },
       { key: 'limpia_brisas', label: 'Limpia brisas' },
-      { key: 'silleteria', label: 'Silleteria y tapiceria' },
+      { key: 'silleteria', label: 'Silletería y tapicería' },
       { key: 'indicadores_tablero', label: 'Indicadores (hidráulicos, voltímetro, etc)' },
-      { key: 'baterias_cables', label: 'Baterias y cables' },
-      { key: 'presion_aire', label: 'Presion de Aire' }
+      { key: 'baterias_cables', label: 'Baterías y cables' },
+      { key: 'presion_aire', label: 'Presión de Aire' }
     ]
   },
   {
-    titulo: 'LLANTAS',
+    titulo: 'MECÁNICA Y VOLCO',
     items: [
-      { key: 'llantas_estado', label: 'En buen estado sin cortaduras ni abultamientos' }
-    ]
-  },
-  {
-    titulo: 'ESTADO MECÁNICO',
-    items: [
+      { key: 'llantas_estado', label: 'Llantas en buen estado (sin cortaduras ni abultamientos)' },
       { key: 'fugas_hidraulicas', label: 'Control de fugas hidráulicas' },
       { key: 'pasadores_suspension', label: 'Pasadores, suspensión' },
-      { key: 'fugas_aire', label: 'Control fuga aires' },
+      { key: 'fugas_aire', label: 'Control fuga de aire' },
       { key: 'grapas_chasis', label: 'Grapas y anclajes de chasis' },
-      { key: 'cadena_cardan', label: 'Cadena del cardan' },
-      { key: 'acoples_rapidos', label: 'Acoples rapidos' },
+      { key: 'cadena_cardan', label: 'Cadena del cardán' },
+      { key: 'acoples_rapidos', label: 'Acoples rápidos' },
       { key: 'mangueras', label: 'Mangueras' },
       { key: 'estado_volco', label: 'Estado general del volco' },
-      { key: 'soporte_volco', label: 'Soporte del volco (Gato hidraulico)' },
+      { key: 'soporte_volco', label: 'Soporte del volco (Gato hidráulico)' },
       { key: 'tanque_combustible', label: 'Tanque de combustible (abrazaderas soporte)' },
       { key: 'motor', label: 'Motor' },
       { key: 'sistema_cargado', label: 'Sistema de cargado' },
       { key: 'ganchos_compuerta', label: 'Ganchos compuerta' },
-      { key: 'soportes_buge', label: 'Soportes buge volco' }
+      { key: 'soportes_buge', label: 'Soportes buje volco' }
     ]
   },
   {
-    titulo: 'KIT CARRETERA',
+    titulo: 'DOCUMENTOS Y KIT CARRETERA',
     items: [
-      { key: 'documentos', label: 'Documentos conductor y del vehiculo' },
+      { key: 'documentos', label: 'Documentos conductor y del vehículo' },
       { key: 'gato', label: 'Gato' },
-      { key: 'cruceta', label: 'Cruzeta y Taco' },
+      { key: 'cruceta', label: 'Cruceta' },
+      { key: 'taco', label: 'Taco' },
       { key: 'caja_herramientas', label: 'Caja de Herramientas' },
       { key: 'llanta_repuesto', label: 'Llanta de Repuesto' },
       { key: 'linterna', label: 'Linterna' },
       { key: 'senales_carretera', label: 'Señales de Carretera (Triángulos)' },
-      { key: 'botiquin', label: 'Botiquin de Primeros Auxilios' },
-      { key: 'extintor', label: 'Extintor de incendio(10 lbs) PQS' }
+      { key: 'botiquin', label: 'Botiquín de Primeros Auxilios' },
+      { key: 'extintor', label: 'Extintor de incendio (10 lbs) PQS' }
     ]
   }
 ];
@@ -526,6 +691,26 @@ const obtenerValorMatriz = (llavePropiedad, numeroDia) => {
 };
 
 //FUNCIONES DE INTERFAZ Y DESCARGA
+const precargarLogo = () => new Promise((resolve) => {
+  const img = new Image();
+  img.onload = () => resolve(true);
+  img.onerror = () => resolve(false);
+  img.src = '/logo.png';
+});
+
+const agregarPiePagina = (pdf) => {
+  const totalPaginas = pdf.internal.getNumberOfPages();
+  const ancho = pdf.internal.pageSize.getWidth();
+  const alto = pdf.internal.pageSize.getHeight();
+  for (let i = 1; i <= totalPaginas; i++) {
+    pdf.setPage(i);
+    pdf.setFontSize(8);
+    pdf.setTextColor(120);
+    pdf.text(`Generado por Materiales Vera – VERA S.A.S.  |  ${fechaGeneracion.value}`, 15, alto - 7);
+    pdf.text(`Página ${i} de ${totalPaginas}`, ancho - 15, alto - 7, { align: 'right' });
+  }
+};
+
 const generarPDFSemanal = async () => {
   if (checklistsFiltrados.value.length === 0) {
     alert("No hay reportes para exportar. Seleccione una placa y un rango de fechas válido.");
@@ -541,10 +726,12 @@ const generarPDFSemanal = async () => {
       filename: `Matriz_Semanal_${filtros.value.texto || 'General'}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+      pagebreak: { mode: ['css', 'legacy'] }
     };
 
-    await html2pdf().set(opciones).from(elemento).save();
+    await precargarLogo();
+    await html2pdf().set(opciones).from(elemento).toPdf().get('pdf').then(agregarPiePagina).save();
   } catch (error) {
     console.error('Error generando PDF', error);
   } finally {
@@ -557,7 +744,7 @@ const descargarPDF = async () => {
   generandoPDF.value = true;
   iniciarCarga('Generando reporte PDF...');
   try {
-    const elemento = document.getElementById('contenido-pdf');
+    const elemento = document.getElementById('reporte-impresion');
     const nombreArchivo = `Reporte_${checklistSeleccionado.value.placa}_${checklistSeleccionado.value.fecha_formateada}.pdf`;
 
     const opciones = {
@@ -565,10 +752,12 @@ const descargarPDF = async () => {
       filename: nombreArchivo,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+      pagebreak: { mode: ['css', 'legacy'] }
     };
 
-    await html2pdf().set(opciones).from(elemento).save();
+    await precargarLogo();
+    await html2pdf().set(opciones).from(elemento).toPdf().get('pdf').then(agregarPiePagina).save();
   } catch (error) {
     console.error('Error generando PDF', error);
   } finally {
