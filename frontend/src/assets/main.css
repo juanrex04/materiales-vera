@@ -2,25 +2,31 @@
    1. VARIABLES GLOBALES Y RESET
    ======================================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+
 :root {
-  --font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  --bg-body: #f8f9fa;
-  --bg-header: #1e293b;
-  --text-muted: #94a3b8;
-  --primary-blue: #3b82f6;
-  --primary-hover: #2563eb;
-  --edit-orange: #efa938;
+  --font-family: "Inter", system-ui, -apple-system, sans-serif;
+  --bg-body: #f1f5f9;
+  --bg-header: rgba(30, 41, 59, 0.85);
+  --text-muted: #64748b;
+  --text-main: #0f172a;
+  --primary-blue: #2563eb;
+  --primary-hover: #1d4ed8;
+  --edit-orange: #f59e0b;
   --danger-red: #ef4444;
-  --border-color: #cbd5e1;
+  --border-color: #e2e8f0;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --radius-md: 10px;
+  --radius-lg: 16px;
 }
 
 /* Aplicamos la fuente de forma directa al body y a los elementos nativos */
 * {
-  font-family:
-    "Segoe UI",
-    system-ui,
-    -apple-system,
-    sans-serif !important;
+  font-family: var(--font-family) !important;
+  box-sizing: border-box;
 }
 
 body {
@@ -28,6 +34,8 @@ body {
   padding: 0;
   background-color: var(--bg-body);
   font-family: var(--font-family);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
 }
 
 .dashboard-container {
@@ -39,11 +47,20 @@ body {
   justify-content: space-between;
   align-items: center;
   background-color: var(--bg-header);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: white;
   padding: 1rem 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  flex-wrap: wrap; /* Permite que los elementos bajen en móviles */
-  position: relative; /* OBLIGATORIO: Para que el menú móvil se posicione correctamente abajo */
+  box-shadow: var(--shadow-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header * {
+  color: white;
 }
 
 .brand {
@@ -60,6 +77,9 @@ body {
 
 .brand h2 {
   margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .nav-menu {
@@ -68,10 +88,12 @@ body {
   gap: 1.5rem;
   flex-wrap: wrap;
 }
+
 .user-tag {
   font-size: 0.95rem;
   color: var(--border-color);
 }
+
 .content {
   padding: 2rem;
   max-width: 1200px;
@@ -100,22 +122,25 @@ body {
 }
 
 .btn-nav {
-  background-color: #334155;
-  color: var(--text-muted);
+  background-color: transparent;
+  color: var(--text-muted) !important;
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: 500;
   transition: all 0.3s ease;
 }
+
 .btn-nav:hover {
-  background-color: #475569;
-  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white !important;
 }
+
 .btn-nav.activo {
-  background-color: var(--primary-blue);
-  color: white;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .btn-logout {
@@ -127,53 +152,78 @@ body {
   cursor: pointer;
   font-weight: bold;
 }
+
 .btn-primary {
-  background-color: var(--primary-blue);
-  color: white;
+  background: linear-gradient(135deg, var(--primary-blue), var(--primary-hover));
+  color: white !important;
   border: none;
   padding: 0.6rem 1.2rem;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-md);
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  background: linear-gradient(135deg, var(--primary-hover), #1e40af);
 }
+
 .btn-secondary {
-  background-color: #64748b;
-  color: white;
+  background: linear-gradient(135deg, #64748b, #475569);
+  color: white !important;
   border: none;
   padding: 0.6rem 1.2rem;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover {
-  background-color: #475569;
-  color: white;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, #475569, #334155);
 }
 
 .btn-edit {
-  background-color: #efa938;
-  color: white;
-  border: 1px solid var(--border-color);
+  background: linear-gradient(135deg, var(--edit-orange), #d97706);
+  color: white !important;
+  border: none;
   padding: 0.6rem 1.2rem;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   margin-right: 5px;
-  font-weight: bold;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-edit:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, #d97706, #b45309);
 }
 
 .btn-delete {
-  background-color: var(--danger-red);
-  color: #fef2f2;
-  border: 1px solid #fee2e2;
+  background: linear-gradient(135deg, var(--danger-red), #dc2626);
+  color: white !important;
+  border: none;
   padding: 0.6rem 1.2rem;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-delete:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
 }
 
 /* ========================================================
@@ -182,25 +232,45 @@ body {
 .bienvenida-card {
   background: linear-gradient(135deg, #1e3a8a, var(--primary-blue));
   color: white;
-  padding: 1.5rem;
-  border-radius: 8px;
+  padding: 2rem;
+  border-radius: var(--radius-lg);
   margin-bottom: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
 }
+
+.bienvenida-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(to bottom right, transparent, rgba(255, 255, 255, 0.1));
+  pointer-events: none;
+}
+
 .bienvenida-card h3 {
   margin: 0 0 0.5rem 0;
+  font-weight: 700;
+  font-size: 1.5rem;
 }
+
 .bienvenida-card p {
   margin: 0;
   opacity: 0.9;
+  font-size: 1.05rem;
 }
 
 .gestion-seccion {
   background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
+
 .titulo-acciones {
   display: flex;
   justify-content: space-between;
@@ -215,21 +285,51 @@ body {
    ======================================================== */
 .tabla-contenedor {
   overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: white;
 }
+
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 600px;
+  min-width: 700px;
 }
+
 th,
 td {
-  padding: 14px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
   text-align: left;
+  vertical-align: middle;
 }
-th {
+
+tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+tbody tr:hover {
   background-color: #f8fafc;
-  color: #64748b;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+th {
+  background-color: #f1f5f9;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.acciones-tabla {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 /* ========================================================
@@ -241,6 +341,7 @@ th {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
+
 .alerta-vacia {
   color: #16a34a;
   background-color: #f0fdf4;
@@ -249,27 +350,52 @@ th {
   font-weight: 500;
   text-align: center;
 }
+
 .alertas-lista {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
+
 .alerta-tarjeta {
-  padding: 1rem;
-  border-radius: 6px;
+  padding: 1rem 1.2rem;
+  border-radius: var(--radius-md);
   border-left: 5px solid;
   text-align: left;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+  animation: slideInUp 0.4s ease-out forwards;
 }
+
+.alerta-tarjeta:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-md);
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .critica {
   background-color: #fef2f2;
   border-color: var(--danger-red);
   color: #991b1b;
 }
+
 .advertencia {
   background-color: #fffbeb;
   border-color: #f59e0b;
   color: #92400e;
 }
+
 .error {
   color: var(--danger-red);
   font-size: 0.9rem;
@@ -282,16 +408,19 @@ th {
   margin-top: 4px;
   font-weight: normal;
 }
+
 .badge-rol {
   padding: 4px 10px;
   border-radius: 50px;
   font-weight: bold;
   font-size: 0.85rem;
 }
+
 .badge-rol.admin {
   background-color: #ede9fe;
   color: #6d28d9;
 }
+
 .badge-rol.conductor {
   background-color: #e0f2fe;
   color: #0369a1;
@@ -305,15 +434,18 @@ th {
   margin-bottom: 1rem;
   border: 1px solid #e2e8f0;
 }
+
 .alert-documentos h4 {
   margin: 0 0 10px 0;
   color: #1e293b;
 }
+
 .docs-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
 }
+
 .doc-item {
   background: white;
   padding: 12px;
@@ -323,16 +455,20 @@ th {
   flex-direction: column;
   gap: 4px;
 }
+
 .doc-vencido {
   border-left-color: #ef4444;
 }
+
 .doc-proximo {
   border-left-color: #f59e0b;
 }
+
 .doc-estado {
   font-size: 0.85rem;
   font-weight: 600;
 }
+
 .doc-ok {
   color: #16a34a;
 }
@@ -352,6 +488,7 @@ th {
   align-items: center;
   z-index: 1000;
 }
+
 .modal-content {
   background: white;
   padding: 2rem;
@@ -359,17 +496,20 @@ th {
   width: 90%;
   max-width: 500px;
 }
+
 .form-vertical {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
+
 .form-vertical div {
   display: flex;
   flex-direction: column;
   text-align: left;
 }
+
 .form-group {
   margin-bottom: 1rem;
   text-align: left;
@@ -390,7 +530,8 @@ textarea {
   border-radius: 6px;
   box-sizing: border-box;
   background-color: #ffffff;
-  font-family: inherit; /* Hereda la fuente Segoe UI del sistema */
+  font-family: inherit;
+  /* Hereda la fuente Segoe UI del sistema */
   font-size: 0.95rem;
   transition:
     border-color 0.2s ease,
@@ -426,8 +567,9 @@ textarea:focus {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: var(--bg-body);
+  background: linear-gradient(135deg, var(--bg-body), #e2e8f0);
 }
+
 .login-layout {
   display: flex;
   flex-direction: row;
@@ -438,41 +580,55 @@ textarea:focus {
   max-width: 1000px;
   padding: 1.5rem;
 }
+
 .login-brand {
   flex: 1;
   display: flex;
   justify-content: flex-end;
 }
+
 .login-box {
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 2.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   width: 90%;
-  max-width: 400px;
+  max-width: 420px;
   text-align: center;
 }
+
 .login-logo {
   width: 340px;
   height: 340px;
   object-fit: contain;
   display: block;
 }
+
 .login-box button {
   width: 100%;
-  padding: 0.75rem;
-  background-color: var(--primary-hover);
+  padding: 0.85rem;
+  background: linear-gradient(135deg, var(--primary-blue), var(--primary-hover));
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 1rem;
-  margin-top: 1rem;
-  font-weight: bold;
-  transition: background-color 0.3s;
+  font-size: 1.05rem;
+  margin-top: 1.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-md);
 }
+
+.login-box button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
 .login-box button:disabled {
-  background-color: #a0c4e8;
+  background: #cbd5e1;
+  box-shadow: none;
   cursor: not-allowed;
 }
 
@@ -483,6 +639,7 @@ textarea:focus {
   background-color: #fef2f2;
   color: #b91c1c;
 }
+
 .celda-amarilla {
   background-color: #fffbeb;
   color: #b45309;
@@ -498,14 +655,17 @@ textarea:focus {
   font-weight: bold;
   display: inline-block;
 }
+
 .badge-estado.disponible {
   background-color: #dcfce7;
   color: #16a34a;
 }
+
 .badge-estado.en-ruta {
   background-color: #dbeafe;
   color: #2563eb;
 }
+
 .badge-estado.mantenimiento {
   background-color: #fef3c7;
   color: #d97706;
@@ -581,6 +741,7 @@ textarea:focus {
   background: #f8fafc;
   padding: 10px;
 }
+
 .categoria-titulo {
   background-color: #e2e8f0;
   padding: 0.5rem 1rem;
@@ -589,11 +750,13 @@ textarea:focus {
   margin-bottom: 1rem;
   color: #334155;
 }
+
 .grid-checkboxes {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 10px;
 }
+
 .check-item {
   display: flex;
   align-items: center;
@@ -605,10 +768,12 @@ textarea:focus {
   font-size: 0.9rem;
   transition: all 0.2s;
 }
+
 .check-item:hover {
   border-color: var(--primary-blue);
   background-color: #f0fdf4;
 }
+
 .check-item input {
   width: auto;
   margin-right: 10px;
@@ -681,9 +846,11 @@ textarea:focus {
   padding-bottom: 1rem;
   margin-bottom: 1rem;
 }
+
 .modal-header h3 {
   margin: 0;
 }
+
 .btn-close {
   background: none;
   border: none;
@@ -708,6 +875,7 @@ textarea:focus {
   border: 1px solid var(--border-color);
   margin-bottom: 1.5rem;
 }
+
 .info-resumen p {
   margin: 0;
   font-size: 0.95rem;
@@ -720,6 +888,7 @@ textarea:focus {
   border-radius: 6px;
   margin-bottom: 1.5rem;
 }
+
 .observaciones-caja p {
   margin: 0.5rem 0 0 0;
   color: #92400e;
@@ -822,6 +991,7 @@ a.btn-nav {
    9. RESPONSIVE DESIGN & BURGER MENU OPTIMIZATION
    ======================================================== */
 @media (max-width: 768px) {
+
   /* Activa la visualización del botón hamburguesa */
   .hamburger {
     display: block;
@@ -832,9 +1002,11 @@ a.btn-nav {
     flex-direction: column;
     gap: 1.5rem;
   }
+
   .login-brand {
     justify-content: center;
   }
+
   .login-logo {
     width: 100px;
     height: 100px;
@@ -889,7 +1061,8 @@ a.btn-nav {
     justify-content: center;
     align-items: center;
     width: 100%;
-    max-width: 90%; /* Deja un margen elegante a los lados en el celular */
+    max-width: 90%;
+    /* Deja un margen elegante a los lados en el celular */
     padding: 12px;
     text-decoration: none;
     box-sizing: border-box;
@@ -912,6 +1085,7 @@ a.btn-nav {
     flex-direction: column;
     align-items: flex-start;
   }
+
   .modal-actions {
     flex-direction: column-reverse;
   }
@@ -943,11 +1117,11 @@ a.btn-nav {
 }
 
 .skeleton-card {
-  height: 72px;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  height: 80px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, #e2e8f0 25%, #f8fafc 50%, #e2e8f0 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.5s infinite linear;
 }
 
 .skeleton-grid {
@@ -957,8 +1131,13 @@ a.btn-nav {
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .overlay-carga {
@@ -985,7 +1164,9 @@ a.btn-nav {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .overlay-mensaje {
@@ -1026,4 +1207,54 @@ a.btn-nav {
   line-height: 1;
   cursor: pointer;
   padding: 0 0.25rem;
+}
+
+/* ========================================================
+   RESPONSIVE (MÓVIL)
+   ======================================================== */
+@media (max-width: 768px) {
+  .hamburger {
+    display: block;
+  }
+
+  .nav-menu {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: var(--bg-header);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 1.5rem 2rem;
+    box-shadow: var(--shadow-lg);
+    align-items: stretch;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 1rem;
+  }
+
+  .nav-menu.nav-active {
+    display: flex;
+  }
+
+  .admin-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-nav {
+    width: 100%;
+    text-align: left;
+  }
+
+  .brand h2 {
+    font-size: 1.1rem;
+  }
+
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+  }
 }

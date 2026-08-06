@@ -72,8 +72,10 @@
                                     </template>
                                 </td>
                                 <td>
-                                    <button @click="abrirModalEditar(v)" class="btn-edit">Editar</button>
-                                    <button @click="eliminarVehiculo(v.id)" class="btn-delete">Eliminar</button>
+                                    <div class="acciones-tabla">
+                                        <button @click="abrirModalEditar(v)" class="btn-edit">Editar</button>
+                                        <button @click="eliminarVehiculo(v.id)" class="btn-delete">Eliminar</button>
+                                    </div>
                                 </td>
                             </tr>
                         </tbody>
