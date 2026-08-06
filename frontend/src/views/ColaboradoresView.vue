@@ -36,6 +36,13 @@
                             </tr>
                         </tbody>
                     </table>
+
+                    <PaginadorTabla
+                        v-model:pagina="pagina"
+                        v-model:porPagina="porPagina"
+                        :total="totalColaboradores"
+                        :cargando="cargando"
+                    />
                 </div>
             </div>
 
@@ -79,10 +86,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { peticion } from '@/api';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
+import PaginadorTabla from '@/components/PaginadorTabla.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
 import { mostrarToast, confirmarAccion } from '@/utils/alertas';
 
@@ -92,15 +100,28 @@ const errorMensaje = ref('');
 const guardando = ref(false);
 const mostrarModal = ref(false);
 const modoEdicion = ref(false);
+const pagina = ref(1);
+const porPagina = ref(10);
+const totalColaboradores = ref(0);
 const formulario = ref({ id: null, nombre: '', email: '', rol_id: 2, licencia_conducir: '' });
 
 onMounted(() => { obtenerColaboradores(); });
+
+watch([pagina, porPagina], () => { obtenerColaboradores(); });
 
 const obtenerColaboradores = async () => {
     cargando.value = true;
     errorMensaje.value = '';
     try {
-        listaColaboradores.value = await peticion('/api/admin/colaboradores');
+        const respuesta = await peticion(`/api/admin/colaboradores?pagina=${pagina.value}&porPagina=${porPagina.value}`);
+        listaColaboradores.value = respuesta.datos;
+        totalColaboradores.value = respuesta.total;
+
+        const totalPaginas = Math.max(1, Math.ceil(totalColaboradores.value / porPagina.value));
+        if (pagina.value > totalPaginas) {
+            pagina.value = totalPaginas;
+            obtenerColaboradores();
+        }
     } catch (error) { errorMensaje.value = error.message; }
     finally { cargando.value = false; }
 };

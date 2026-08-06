@@ -80,6 +80,13 @@
                             </tr>
                         </tbody>
                     </table>
+
+                    <PaginadorTabla
+                        v-model:pagina="pagina"
+                        v-model:porPagina="porPagina"
+                        :total="totalVehiculos"
+                        :cargando="cargando"
+                    />
                 </div>
             </div>
 
@@ -125,10 +132,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { peticion } from '@/api';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
+import PaginadorTabla from '@/components/PaginadorTabla.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
 import { mostrarToast, confirmarAccion } from '@/utils/alertas';
 
@@ -138,15 +146,28 @@ const guardando = ref(false);
 const errorMensaje = ref('');
 const mostrarModal = ref(false);
 const modoEdicion = ref(false);
+const pagina = ref(1);
+const porPagina = ref(10);
+const totalVehiculos = ref(0);
 const formulario = ref({ id: null, placa: '', marca: '', capacidad_carga_kg: '', estado: 'Disponible', fecha_soat: '', fecha_tecnomecanica: '', fecha_ultimo_cambio_aceite: ''});
 
 onMounted(() => { obtenerVehiculos(); });
+
+watch([pagina, porPagina], () => { obtenerVehiculos(); });
 
 const obtenerVehiculos = async () => {
     cargando.value = true;
     errorMensaje.value = '';
     try {
-        listaVehiculos.value = await peticion('/api/admin/vehiculos');
+        const respuesta = await peticion(`/api/admin/vehiculos?pagina=${pagina.value}&porPagina=${porPagina.value}`);
+        listaVehiculos.value = respuesta.datos;
+        totalVehiculos.value = respuesta.total;
+
+        const totalPaginas = Math.max(1, Math.ceil(totalVehiculos.value / porPagina.value));
+        if (pagina.value > totalPaginas) {
+            pagina.value = totalPaginas;
+            obtenerVehiculos();
+        }
     } catch (error) { errorMensaje.value = error.message; }
     finally { cargando.value = false; }
 };

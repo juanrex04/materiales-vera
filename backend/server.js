@@ -35,6 +35,16 @@ const validar = (req, res, next) => {
 const esErrorDuplicado = (err) => err && err.code === 'ER_DUP_ENTRY';
 
 // ==========================================
+// HELPERS DE PAGINACIÓN
+// ==========================================
+function obtenerPaginacion(req) {
+  const pagina = Math.max(parseInt(req.query.pagina) || 1, 1);
+  const porPagina = Math.min(Math.max(parseInt(req.query.porPagina) || 10, 1), 100);
+  const offset = (pagina - 1) * porPagina;
+  return { pagina, porPagina, limite: porPagina, offset };
+}
+
+// ==========================================
 // HELPERS DE VALIDACION DEL CHECKLIST DIARIO
 // ==========================================
 async function obtenerVehiculosVerificadosHoy() {
@@ -174,7 +184,17 @@ app.post('/api/login',loginLimiter, [
 // ==========================================
 app.get('/api/admin/colaboradores', verificarToken, esAdmin, async (req, res) => {
   try {
-    const [rows] = await pool.query(`SELECT c.id, c.nombre, c.email, r.nombre as rol, c.licencia_conducir FROM colaboradores c JOIN roles r ON c.rol_id = r.id`);
+    const baseQuery = `FROM colaboradores c JOIN roles r ON c.rol_id = r.id`;
+    const seleccion = `SELECT c.id, c.nombre, c.email, r.nombre as rol, c.licencia_conducir ${baseQuery}`;
+
+    if (req.query.pagina) {
+      const { porPagina, offset } = obtenerPaginacion(req);
+      const [contador] = await pool.query(`SELECT COUNT(*) as total ${baseQuery}`);
+      const [rows] = await pool.query(`${seleccion} ORDER BY c.nombre ASC LIMIT ? OFFSET ?`, [porPagina, offset]);
+      return res.json({ datos: rows, total: contador[0].total });
+    }
+
+    const [rows] = await pool.query(`${seleccion} ORDER BY c.nombre ASC`);
     res.json(rows);
   } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
@@ -242,10 +262,7 @@ app.delete('/api/admin/colaboradores/:id', verificarToken, esAdmin, async (req, 
 // LECTURA CON CÁLCULO DE VENCIMIENTOS
 app.get('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
   try {
-    const [vehiculos] = await pool.query('SELECT * FROM vehiculos ORDER BY id ASC');
-    const fechaActual = new Date();
-
-    const listaProcesada = vehiculos.map(vehiculo => {
+    const procesarVehiculo = (vehiculo) => {
       const soat = new Date(vehiculo.fecha_soat);
       const tecno = new Date(vehiculo.fecha_tecnomecanica);
 
@@ -272,7 +289,20 @@ app.get('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
         tecno_estado: diasFaltanTecno < 0 ? 'VENCIDO' : (diasFaltanTecno <= 15 ? 'PROXIMO' : 'OK'),
         aceite_estado: diasFaltanAceite < 0 ? 'VENCIDO' : (diasFaltanAceite <= 8 ? 'PROXIMO' : 'OK')
       };
-    });
+    };
+
+    const fechaActual = new Date();
+
+    if (req.query.pagina) {
+      const { porPagina, offset } = obtenerPaginacion(req);
+      const [contador] = await pool.query('SELECT COUNT(*) as total FROM vehiculos');
+      const [vehiculos] = await pool.query('SELECT * FROM vehiculos ORDER BY id ASC LIMIT ? OFFSET ?', [porPagina, offset]);
+      return res.json({ datos: vehiculos.map(procesarVehiculo), total: contador[0].total });
+    }
+
+    const [vehiculos] = await pool.query('SELECT * FROM vehiculos ORDER BY id ASC');
+
+    const listaProcesada = vehiculos.map(procesarVehiculo);
     res.json(listaProcesada);
   } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
@@ -425,25 +455,87 @@ app.post('/api/conductor/checklist', verificarToken, [
 });
 
 // Obtener el historial de checklists para la vista de admin
+// CONSTRUYE LOS FILTROS Y EL JOIN PARA EL LISTADO DE CHECKLISTS
+function construirFiltrosChecklists(req) {
+  const condiciones = [];
+  const parametros = [];
+  const { texto, placa, fechaInicio, fechaFin, estado } = req.query;
+
+  if (placa) {
+    condiciones.push('v.placa = ?');
+    parametros.push(placa);
+  }
+  if (texto) {
+    const termino = `%${texto}%`;
+    condiciones.push('(col.nombre LIKE ? OR v.placa LIKE ?)');
+    parametros.push(termino, termino);
+  }
+  if (fechaInicio) {
+    condiciones.push('c.fecha >= ?');
+    parametros.push(fechaInicio);
+  }
+  if (fechaFin) {
+    // +1 día para incluir todo el día final
+    condiciones.push('c.fecha < DATE_ADD(?, INTERVAL 1 DAY)');
+    parametros.push(fechaFin);
+  }
+  if (estado === 'apto') {
+    condiciones.push('c.apto_para_trabajar = 1');
+  } else if (estado === 'falla') {
+    condiciones.push('c.apto_para_trabajar = 0');
+  }
+
+  const where = condiciones.length > 0 ? `WHERE ${condiciones.join(' AND ')}` : '';
+  return { where, parametros };
+}
+
+const FROM_CHECKLISTS = `
+  FROM checklists_diarios c
+  JOIN vehiculos v ON c.vehiculo_id = v.id
+  JOIN colaboradores col ON c.colaborador_id = col.id
+`;
+
+const SELECT_CHECKLISTS = `
+  SELECT 
+    c.*, 
+    DATE_FORMAT(c.fecha, '%Y-%m-%d') as fecha_formateada,
+    v.placa, v.marca, 
+    v.fecha_soat, v.fecha_tecnomecanica, 
+    col.nombre AS conductor
+  ${FROM_CHECKLISTS}
+`;
+
 app.get('/api/admin/checklists', verificarToken, esAdmin, async (req, res) => {
   try {
-    const query = `
-      SELECT 
-        c.*, 
-        DATE_FORMAT(c.fecha, '%Y-%m-%d') as fecha_formateada,
-        v.placa, v.marca, 
-        v.fecha_soat, v.fecha_tecnomecanica, 
-        col.nombre AS conductor
-      FROM checklists_diarios c
-      JOIN vehiculos v ON c.vehiculo_id = v.id
-      JOIN colaboradores col ON c.colaborador_id = col.id
-      ORDER BY c.fecha DESC, c.hora DESC
-    `;
+    const { where, parametros } = construirFiltrosChecklists(req);
+    const { porPagina, offset } = obtenerPaginacion(req);
 
-    const [checklists] = await pool.query(query);
-    res.json(checklists);
+    const [contador] = await pool.query(
+      `SELECT COUNT(*) as total ${FROM_CHECKLISTS} ${where}`,
+      parametros
+    );
+    const [checklists] = await pool.query(
+      `${SELECT_CHECKLISTS} ${where} ORDER BY c.fecha DESC, c.hora DESC LIMIT ? OFFSET ?`,
+      [...parametros, porPagina, offset]
+    );
+    res.json({ datos: checklists, total: contador[0].total });
   } catch (error) {
     console.error('Error al obtener checklists:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// EXPORTACIÓN COMPLETA (SIN PAGINACIÓN) PARA EL PDF SEMANAL
+app.get('/api/admin/checklists/exportar', verificarToken, esAdmin, async (req, res) => {
+  try {
+    const { where, parametros } = construirFiltrosChecklists(req);
+    const [checklists] = await pool.query(
+      `${SELECT_CHECKLISTS} ${where} ORDER BY c.fecha ASC, c.hora ASC`,
+      parametros
+    );
+    res.json(checklists);
+  } catch (error) {
+    console.error('Error al exportar checklists:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });

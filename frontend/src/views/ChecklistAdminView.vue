@@ -67,7 +67,7 @@
             </thead>
             <tbody>
               <SkeletonTabla v-if="cargando" :columnas="5" :filas="5" />
-              <tr v-for="chk in checklistsFiltrados" :key="chk.id">
+              <tr v-for="chk in listaChecklists" :key="chk.id">
                 <td>
                   <strong>{{ formatearFecha(chk.fecha_formateada) }}</strong><br>
                   <small class="text-muted">{{ chk.hora }}</small>
@@ -83,13 +83,20 @@
                   <button @click="abrirModalDetalles(chk)" class="btn-primary">Ver Reporte</button>
                 </td>
               </tr>
-              <tr v-if="checklistsFiltrados.length === 0">
+              <tr v-if="!cargando && listaChecklists.length === 0">
                 <td colspan="5" style="text-align: center; padding: 2rem; color: #64748b;">
                   No se encontraron inspecciones en ese rango de fechas.
                 </td>
               </tr>
             </tbody>
           </table>
+
+          <PaginadorTabla
+            v-model:pagina="pagina"
+            v-model:porPagina="porPagina"
+            :total="totalChecklists"
+            :cargando="cargando"
+          />
         </div>
 
         <div v-if="modalVisible" class="modal-overlay" @click.self="cerrarModal">
@@ -436,7 +443,7 @@
       <div style="margin-top: 6px;">
         <strong>Observaciones de la Semana:</strong>
         <div style="min-height: 30px; border: 1px solid #94a3b8; padding: 4px; margin-top: 3px;">
-          <p v-for="chk in checklistsFiltrados" :key="'obs' + chk.id" style="margin: 2px 0;">
+          <p v-for="chk in checklistsExportados" :key="'obs' + chk.id" style="margin: 2px 0;">
             <span v-if="chk.observaciones"><strong>{{ formatearFecha(chk.fecha_formateada) }}:</strong> {{
               chk.observaciones }}</span>
           </p>
@@ -457,10 +464,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import html2pdf from 'html2pdf.js';
 import { peticion } from '@/api';
 import { mostrarAlerta, mostrarToast } from '@/utils/alertas';
+import PaginadorTabla from '@/components/PaginadorTabla.vue';
+import { debounce } from '@/utils/debounce';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
@@ -471,6 +480,12 @@ const errorMensaje = ref('');
 const generandoPDF = ref(false);
 const modalVisible = ref(false);
 const checklistSeleccionado = ref(null);
+
+// ESTADO DE PAGINACIÓN SERVER-SIDE
+const pagina = ref(1);
+const porPagina = ref(10);
+const totalChecklists = ref(0);
+const checklistsExportados = ref([]);
 
 const filtros = ref({
   texto: '',
@@ -510,32 +525,18 @@ const formatearFecha = (fecha) => {
   return `${dia} de ${mes} de ${anio}`;
 };
 
-// LÓGICA DE FILTRADO
-const checklistsFiltrados = computed(() => {
-  return listaChecklists.value.filter((chk) => {
-    let coincideTexto = true;
-    if (filtros.value.placa) {
-      coincideTexto = chk.placa === filtros.value.placa;
-    } else {
-      const termino = filtros.value.texto.toLowerCase();
-      coincideTexto = chk.conductor.toLowerCase().includes(termino) || chk.placa.toLowerCase().includes(termino);
-    }
-
-    let coincideFecha = true;
-    if (filtros.value.fechaInicio) {
-      coincideFecha = coincideFecha && (chk.fecha_formateada >= filtros.value.fechaInicio);
-    }
-    if (filtros.value.fechaFin) {
-      coincideFecha = coincideFecha && (chk.fecha_formateada <= filtros.value.fechaFin);
-    }
-
-    let coincideEstado = true;
-    if (filtros.value.estado === 'apto') coincideEstado = chk.apto_para_trabajar;
-    if (filtros.value.estado === 'falla') coincideEstado = !chk.apto_para_trabajar;
-
-    return coincideTexto && coincideFecha && coincideEstado;
-  });
-});
+// LÓGICA DE FILTRADO (SERVER-SIDE: los filtros viajan al backend en cargarChecklists)
+const construirQueryChecklists = () => {
+  const params = new URLSearchParams();
+  params.set('pagina', String(pagina.value));
+  params.set('porPagina', String(porPagina.value));
+  if (filtros.value.texto) params.set('texto', filtros.value.texto);
+  if (filtros.value.placa) params.set('placa', filtros.value.placa);
+  if (filtros.value.fechaInicio) params.set('fechaInicio', filtros.value.fechaInicio);
+  if (filtros.value.fechaFin) params.set('fechaFin', filtros.value.fechaFin);
+  if (filtros.value.estado && filtros.value.estado !== 'todos') params.set('estado', filtros.value.estado);
+  return params.toString();
+};
 
 //VARIABLES DEL PDF (Que dependen de los filtros)
 const placaPDF = computed(() => {
@@ -568,8 +569,8 @@ const fechaTecnoPDF = computed(() => {
 });
 
 const conductorFrecuentePDF = computed(() => {
-  if (checklistsFiltrados.value.length > 0) {
-    return checklistsFiltrados.value[0].conductor;
+  if (checklistsExportados.value.length > 0) {
+    return checklistsExportados.value[0].conductor;
   }
   return '';
 });
@@ -617,6 +618,26 @@ onMounted(() => {
   cargarVehiculos();
 });
 
+// Debounce compartido: colapsa disparos de filtros/paginación en una sola recarga
+const recargarLista = debounce(() => {
+  cargarChecklists();
+}, 250);
+
+// Al cambiar un filtro volvemos a la página 1 y recargamos
+watch(
+  () => filtros.value,
+  () => {
+    pagina.value = 1;
+    recargarLista();
+  },
+  { deep: true }
+);
+
+// Al cambiar de página o de tamaño de página, recargamos
+watch([pagina, porPagina], () => {
+  recargarLista();
+});
+
 const cargarVehiculos = async () => {
   try {
     listaVehiculos.value = await peticion('/api/admin/vehiculos');
@@ -629,7 +650,16 @@ const cargarChecklists = async () => {
   cargando.value = true;
   errorMensaje.value = '';
   try {
-    listaChecklists.value = await peticion('/api/admin/checklists');
+    const respuesta = await peticion(`/api/admin/checklists?${construirQueryChecklists()}`);
+    listaChecklists.value = respuesta.datos;
+    totalChecklists.value = respuesta.total;
+
+    // Si la página queda vacía tras eliminar/buscar, retrocedemos una página
+    const totalPaginas = Math.max(1, Math.ceil(totalChecklists.value / porPagina.value));
+    if (pagina.value > totalPaginas) {
+      pagina.value = totalPaginas;
+      cargarChecklists();
+    }
   } catch (error) {
     errorMensaje.value = error.message;
   } finally {
@@ -643,6 +673,7 @@ const limpiarFiltros = () => {
   filtros.value.fechaInicio = '';
   filtros.value.fechaFin = '';
   filtros.value.estado = 'todos';
+  pagina.value = 1;
 };
 
 //VALIDA QUE EL PDF SEMANAL TENGA PLACA (REGISTRADA) Y RANGO DE FECHAS COMPLETO
@@ -737,7 +768,7 @@ const categoriasRevision = [
 ];
 
 const obtenerValorMatriz = (llavePropiedad, numeroDia) => {
-  const reporteDelDia = checklistsFiltrados.value.find(chk => {
+  const reporteDelDia = checklistsExportados.value.find(chk => {
     let fechaObj = new Date(chk.fecha_formateada + 'T12:00:00');
     let diaSemana = fechaObj.getDay();
     let diaAdaptado = diaSemana === 0 ? 7 : diaSemana;
@@ -776,18 +807,28 @@ const generarPDFSemanal = async () => {
     return;
   }
 
-  if (checklistsFiltrados.value.length === 0) {
-    await mostrarAlerta(
-      'info',
-      'Sin reportes para exportar',
-      'No hay reportes para exportar. Verifique la placa y el rango de fechas seleccionado.'
-    );
-    return;
-  }
-
   generandoPDF.value = true;
   iniciarCarga('Generando PDF semanal...');
   try {
+    // Cargamos TODAS las filas del rango (sin paginar) para construir la matriz
+    const filtrosExport = new URLSearchParams();
+    if (filtros.value.texto) filtrosExport.set('texto', filtros.value.texto);
+    if (filtros.value.placa) filtrosExport.set('placa', filtros.value.placa);
+    if (filtros.value.fechaInicio) filtrosExport.set('fechaInicio', filtros.value.fechaInicio);
+    if (filtros.value.fechaFin) filtrosExport.set('fechaFin', filtros.value.fechaFin);
+    if (filtros.value.estado && filtros.value.estado !== 'todos') filtrosExport.set('estado', filtros.value.estado);
+
+    checklistsExportados.value = await peticion(`/api/admin/checklists/exportar?${filtrosExport.toString()}`);
+
+    if (checklistsExportados.value.length === 0) {
+      await mostrarAlerta(
+        'info',
+        'Sin reportes para exportar',
+        'No hay reportes para exportar. Verifique la placa y el rango de fechas seleccionado.'
+      );
+      return;
+    }
+
     const elemento = document.getElementById('matriz-pdf');
     const opciones = {
       margin: 10,
