@@ -83,11 +83,11 @@
                   <button @click="abrirModalDetalles(chk)" class="btn-primary">Ver Reporte</button>
                 </td>
               </tr>
-              <tr v-if="!cargando && listaChecklists.length === 0">
-                <td colspan="5" style="text-align: center; padding: 2rem; color: #64748b;">
-                  No se encontraron inspecciones en ese rango de fechas.
-                </td>
-              </tr>
+              <EstadoVacioTabla
+                v-if="!cargando && listaChecklists.length === 0"
+                :columnas="5"
+                :mensaje="errorMensaje ? 'No se pudieron cargar las inspecciones.' : 'No se encontraron inspecciones en ese rango de fechas.'"
+              />
             </tbody>
           </table>
 
@@ -469,6 +469,7 @@ import html2pdf from 'html2pdf.js';
 import { peticion } from '@/api';
 import { mostrarAlerta, mostrarToast } from '@/utils/alertas';
 import PaginadorTabla from '@/components/PaginadorTabla.vue';
+import EstadoVacioTabla from '@/components/EstadoVacioTabla.vue';
 import { debounce } from '@/utils/debounce';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
@@ -651,8 +652,9 @@ const cargarChecklists = async () => {
   errorMensaje.value = '';
   try {
     const respuesta = await peticion(`/api/admin/checklists?${construirQueryChecklists()}`);
-    listaChecklists.value = respuesta.datos;
-    totalChecklists.value = respuesta.total;
+    const normalizada = Array.isArray(respuesta) ? respuesta : (respuesta?.datos || []);
+    listaChecklists.value = normalizada;
+    totalChecklists.value = Array.isArray(respuesta) ? normalizada.length : (respuesta?.total || 0);
 
     // Si la página queda vacía tras eliminar/buscar, retrocedemos una página
     const totalPaginas = Math.max(1, Math.ceil(totalChecklists.value / porPagina.value));

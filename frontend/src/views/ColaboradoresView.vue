@@ -34,6 +34,11 @@
                                     </div>
                                 </td>
                             </tr>
+                            <EstadoVacioTabla
+                                v-if="!cargando && listaColaboradores.length === 0"
+                                :columnas="5"
+                                :mensaje="errorMensaje ? 'No se pudieron cargar los colaboradores.' : 'No hay colaboradores registrados en el sistema.'"
+                            />
                         </tbody>
                     </table>
 
@@ -91,6 +96,7 @@ import { peticion } from '@/api';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import PaginadorTabla from '@/components/PaginadorTabla.vue';
+import EstadoVacioTabla from '@/components/EstadoVacioTabla.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
 import { mostrarToast, confirmarAccion } from '@/utils/alertas';
 
@@ -114,8 +120,9 @@ const obtenerColaboradores = async () => {
     errorMensaje.value = '';
     try {
         const respuesta = await peticion(`/api/admin/colaboradores?pagina=${pagina.value}&porPagina=${porPagina.value}`);
-        listaColaboradores.value = respuesta.datos;
-        totalColaboradores.value = respuesta.total;
+        const normalizada = Array.isArray(respuesta) ? respuesta : (respuesta?.datos || []);
+        listaColaboradores.value = normalizada;
+        totalColaboradores.value = Array.isArray(respuesta) ? normalizada.length : (respuesta?.total || 0);
 
         const totalPaginas = Math.max(1, Math.ceil(totalColaboradores.value / porPagina.value));
         if (pagina.value > totalPaginas) {

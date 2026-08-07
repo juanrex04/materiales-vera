@@ -78,6 +78,11 @@
                                     </div>
                                 </td>
                             </tr>
+                            <EstadoVacioTabla
+                                v-if="!cargando && listaVehiculos.length === 0"
+                                :columnas="8"
+                                :mensaje="errorMensaje ? 'No se pudieron cargar los vehículos.' : 'No hay vehículos registrados en el sistema.'"
+                            />
                         </tbody>
                     </table>
 
@@ -137,6 +142,7 @@ import { peticion } from '@/api';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import PaginadorTabla from '@/components/PaginadorTabla.vue';
+import EstadoVacioTabla from '@/components/EstadoVacioTabla.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
 import { mostrarToast, confirmarAccion } from '@/utils/alertas';
 
@@ -160,8 +166,9 @@ const obtenerVehiculos = async () => {
     errorMensaje.value = '';
     try {
         const respuesta = await peticion(`/api/admin/vehiculos?pagina=${pagina.value}&porPagina=${porPagina.value}`);
-        listaVehiculos.value = respuesta.datos;
-        totalVehiculos.value = respuesta.total;
+        const normalizada = Array.isArray(respuesta) ? respuesta : (respuesta?.datos || []);
+        listaVehiculos.value = normalizada;
+        totalVehiculos.value = Array.isArray(respuesta) ? normalizada.length : (respuesta?.total || 0);
 
         const totalPaginas = Math.max(1, Math.ceil(totalVehiculos.value / porPagina.value));
         if (pagina.value > totalPaginas) {
