@@ -140,7 +140,9 @@ const loginLimiter = rateLimit({
 
 app.post('/api/login',loginLimiter, [
   body('email')
+    .trim()
     .isEmail()
+    .normalizeEmail()
     .withMessage('Debe ser un correo electronico válido'),
   body('password')
     .notEmpty()
@@ -202,14 +204,26 @@ app.get('/api/admin/colaboradores', verificarToken, esAdmin, async (req, res) =>
 app.post('/api/admin/colaboradores', verificarToken, esAdmin, [
   body('nombre')
     .trim()
-    .notEmpty()
-    .withMessage('El nombre es requerido'),
+    .stripLow()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('El nombre debe tener entre 2 y 100 caracteres')
+    .matches(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ '.]+$/)
+    .withMessage('El nombre contiene caracteres no permitidos'),
   body('email')
+    .trim()
     .isEmail()
+    .normalizeEmail()
     .withMessage('Debe ser un correo electrónico válido'),
   body('rol_id')
     .isInt({ min: 1 })
-    .withMessage('El rol asignado no es válido')
+    .toInt()
+    .withMessage('El rol asignado no es válido'),
+  body('licencia_conducir')
+    .optional({ values: 'null' })
+    .trim()
+    .stripLow()
+    .matches(/^[A-Za-z0-9 -]{0,20}$/)
+    .withMessage('La licencia de conducción no es válida')
 ], validar, async (req, res) => {
   const { nombre, email, rol_id, licencia_conducir } = req.body;
   try {
@@ -227,16 +241,31 @@ app.post('/api/admin/colaboradores', verificarToken, esAdmin, [
 });
 
 app.put('/api/admin/colaboradores/:id', verificarToken, esAdmin, [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('ID de colaborador inválido'),
   body('nombre')
     .trim()
-    .notEmpty()
-    .withMessage('El nombre es requerido'),
+    .stripLow()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('El nombre debe tener entre 2 y 100 caracteres')
+    .matches(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ '.]+$/)
+    .withMessage('El nombre contiene caracteres no permitidos'),
   body('email')
+    .trim()
     .isEmail()
+    .normalizeEmail()
     .withMessage('Debe ser un correo electrónico válido'),
   body('rol_id')
     .isInt({ min: 1 })
-    .withMessage('El rol asignado no es válido')
+    .toInt()
+    .withMessage('El rol asignado no es válido'),
+  body('licencia_conducir')
+    .optional({ values: 'null' })
+    .trim()
+    .stripLow()
+    .matches(/^[A-Za-z0-9 -]{0,20}$/)
+    .withMessage('La licencia de conducción no es válida')
 ], validar, async (req, res) => {
   const { id } = req.params;
   const { nombre, email, rol_id, licencia_conducir } = req.body;
@@ -249,7 +278,11 @@ app.put('/api/admin/colaboradores/:id', verificarToken, esAdmin, [
   }
 });
 
-app.delete('/api/admin/colaboradores/:id', verificarToken, esAdmin, async (req, res) => {
+app.delete('/api/admin/colaboradores/:id', verificarToken, esAdmin, [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('ID de colaborador inválido')
+], validar, async (req, res) => {
   try {
     await pool.query('DELETE FROM colaboradores WHERE id = ?', [req.params.id]);
     res.json({ mensaje: 'Colaborador eliminado' });
@@ -382,14 +415,22 @@ const camposBooleano = [
 ];
 
 const validacionesChecklist = camposBooleano.map(campo =>
-  body(campo).isBoolean().withMessage(`El campo ${campo.replace(/_/g, ' ')} debe ser verdadero o falso`)
+  body(campo)
+    .isBoolean()
+    .toBoolean()
+    .withMessage(`El campo ${campo.replace(/_/g, ' ')} debe ser verdadero o falso`)
 );
 
 // GUARDAR CHECKLIST DE CARRO ENVIADO
 app.post('/api/conductor/checklist', verificarToken, [
-  body('vehiculo_id').isInt({ min: 1 }).withMessage('Vehículo inválido'),
+  body('vehiculo_id').isInt({ min: 1 }).toInt().withMessage('Vehículo inválido'),
   ...validacionesChecklist,
-  body('observaciones').optional({ values: 'null' }).trim()
+  body('observaciones')
+    .optional({ values: 'null' })
+    .trim()
+    .stripLow()
+    .isLength({ max: 1000 })
+    .withMessage('Las observaciones no pueden superar 1000 caracteres')
 ], validar, async (req, res) => {
   const data = req.body;
 
@@ -460,28 +501,33 @@ function construirFiltrosChecklists(req) {
   const condiciones = [];
   const parametros = [];
   const { texto, placa, fechaInicio, fechaFin, estado } = req.query;
+  const tTexto = (texto || '').trim();
+  const tPlaca = (placa || '').trim().toUpperCase();
+  const tFechaInicio = (fechaInicio || '').trim();
+  const tFechaFin = (fechaFin || '').trim();
+  const tEstado = (estado || '').trim();
 
-  if (placa) {
+  if (tPlaca) {
     condiciones.push('v.placa = ?');
-    parametros.push(placa);
+    parametros.push(tPlaca);
   }
-  if (texto) {
-    const termino = `%${texto}%`;
+  if (tTexto) {
+    const termino = `%${tTexto}%`;
     condiciones.push('(col.nombre LIKE ? OR v.placa LIKE ?)');
     parametros.push(termino, termino);
   }
-  if (fechaInicio) {
+  if (tFechaInicio) {
     condiciones.push('c.fecha >= ?');
-    parametros.push(fechaInicio);
+    parametros.push(tFechaInicio);
   }
-  if (fechaFin) {
+  if (tFechaFin) {
     // +1 día para incluir todo el día final
     condiciones.push('c.fecha < DATE_ADD(?, INTERVAL 1 DAY)');
-    parametros.push(fechaFin);
+    parametros.push(tFechaFin);
   }
-  if (estado === 'apto') {
+  if (tEstado === 'apto') {
     condiciones.push('c.apto_para_trabajar = 1');
-  } else if (estado === 'falla') {
+  } else if (tEstado === 'falla') {
     condiciones.push('c.apto_para_trabajar = 0');
   }
 
@@ -544,14 +590,24 @@ app.get('/api/admin/checklists/exportar', verificarToken, esAdmin, async (req, r
 app.post('/api/admin/vehiculos', verificarToken, esAdmin, [
   body('placa')
     .trim()
+    .stripLow()
+    .toUpperCase()
     .notEmpty()
-    .withMessage('La placa es requerida'),
+    .withMessage('La placa es requerida')
+    .matches(/^[A-Z0-9-]{4,10}$/)
+    .withMessage('La placa no es válida'),
   body('marca')
     .trim()
+    .stripLow()
     .notEmpty()
-    .withMessage('La marca es requerida'),
+    .withMessage('La marca es requerida')
+    .isLength({ max: 60 })
+    .withMessage('La marca no puede superar 60 caracteres')
+    .matches(/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ .,-]+$/)
+    .withMessage('La marca contiene caracteres no permitidos'),
   body('capacidad_carga_kg')
     .isFloat({ min: 1 })
+    .toFloat()
     .withMessage('La capacidad debe ser un número mayor a 0'),
   body('fecha_soat')
     .isISO8601()
@@ -561,7 +617,12 @@ app.post('/api/admin/vehiculos', verificarToken, esAdmin, [
     .withMessage('La fecha de tecnomecánica no es válida'),
   body('fecha_ultimo_cambio_aceite')
     .isISO8601()
-    .withMessage('La fecha de último cambio de aceite es requerida')
+    .withMessage('La fecha de último cambio de aceite es requerida'),
+  body('estado')
+    .optional({ values: 'null' })
+    .trim()
+    .isIn(['Disponible', 'Mantenimiento'])
+    .withMessage('El estado no es válido')
 ], validar, async (req, res) => {
   const { placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado, fecha_ultimo_cambio_aceite } = req.body;
   try {
@@ -583,14 +644,24 @@ app.put('/api/admin/vehiculos/:id', verificarToken, esAdmin, [
     .withMessage('ID de vehículo inválido'),
   body('placa')
     .trim()
+    .stripLow()
+    .toUpperCase()
     .notEmpty()
-    .withMessage('La placa es requerida'),
+    .withMessage('La placa es requerida')
+    .matches(/^[A-Z0-9-]{4,10}$/)
+    .withMessage('La placa no es válida'),
   body('marca')
     .trim()
+    .stripLow()
     .notEmpty()
-    .withMessage('La marca es requerida'),
+    .withMessage('La marca es requerida')
+    .isLength({ max: 60 })
+    .withMessage('La marca no puede superar 60 caracteres')
+    .matches(/^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ .,-]+$/)
+    .withMessage('La marca contiene caracteres no permitidos'),
   body('capacidad_carga_kg')
     .isFloat({ min: 1 })
+    .toFloat()
     .withMessage('La capacidad debe ser un número mayor a 0'),
   body('fecha_soat')
     .isISO8601()
@@ -600,7 +671,12 @@ app.put('/api/admin/vehiculos/:id', verificarToken, esAdmin, [
     .withMessage('La fecha de tecnomecánica no es válida'),
   body('fecha_ultimo_cambio_aceite')
     .isISO8601()
-    .withMessage('La fecha de último cambio de aceite es requerida')
+    .withMessage('La fecha de último cambio de aceite es requerida'),
+  body('estado')
+    .optional({ values: 'null' })
+    .trim()
+    .isIn(['Disponible', 'Mantenimiento'])
+    .withMessage('El estado no es válido')
 ], validar, async (req, res) => {
   const { id } = req.params;
   const { placa, marca, capacidad_carga_kg, fecha_soat, fecha_tecnomecanica, estado, fecha_ultimo_cambio_aceite } = req.body;
@@ -617,7 +693,11 @@ app.put('/api/admin/vehiculos/:id', verificarToken, esAdmin, [
 });
 
 // ELIMINAR
-app.delete('/api/admin/vehiculos/:id', verificarToken, esAdmin, async (req, res) => {
+app.delete('/api/admin/vehiculos/:id', verificarToken, esAdmin, [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('ID de vehículo inválido')
+], validar, async (req, res) => {
   try {
     await pool.query('DELETE FROM vehiculos WHERE id = ?', [req.params.id]);
     res.json({ mensaje: 'Vehículo eliminado de la flota' });
@@ -675,6 +755,10 @@ app.put('/api/cambiar-password', verificarToken, [
 // ==========================================
 // INICIAR EL SERVIDOR
 // ==========================================
-app.listen(PORT, () => {
-  console.log(`Servidor de Materiales Vera corriendo de forma segura en: http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Servidor de Materiales Vera corriendo de forma segura en: http://localhost:${PORT}`);
+  });
+}
+
+module.exports = { app, pool };
