@@ -24,14 +24,14 @@ CREATE TABLE IF NOT EXISTS roles (
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS colaboradores (
   `id` int NOT NULL AUTO_INCREMENT,
+  `documento` varchar(20) DEFAULT NULL,
   `nombre` varchar(100) NOT NULL,
-  `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
   `rol_id` int NOT NULL,
   `licencia_conducir` varchar(50) DEFAULT NULL,
   `debe_cambiar_password` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`),
+  UNIQUE KEY `documento` (`documento`),
   KEY `rol_id` (`rol_id`),
   CONSTRAINT `colaboradores_ibfk_1` FOREIGN KEY (`rol_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT
 );
@@ -152,8 +152,8 @@ INSERT INTO roles (id, nombre) VALUES (1, 'Admin'), (2, 'Conductor')
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 
 -- Usuario administrador inicial
--- Email:  admin@materialesvera.com
+-- Documento: 11111
 -- Clave:  12345  (debe cambiarla en el primer inicio de sesion)
-INSERT INTO colaboradores (nombre, email, password, rol_id, licencia_conducir, debe_cambiar_password)
-VALUES ('Administrador', 'admin@materialesvera.com', '$2b$10$39p50K5ENpGM6812WkotHOpGDnNR6FtYZrkadZQ1EenAo1XVUmafa', 1, NULL, TRUE)
-ON DUPLICATE KEY UPDATE email = email;
+INSERT INTO colaboradores (documento, nombre, password, rol_id, licencia_conducir, debe_cambiar_password)
+VALUES ('11111', 'Administrador', '$2b$10$39p50K5ENpGM6812WkotHOpGDnNR6FtYZrkadZQ1EenAo1XVUmafa', 1, NULL, TRUE)
+ON DUPLICATE KEY UPDATE documento = documento;
