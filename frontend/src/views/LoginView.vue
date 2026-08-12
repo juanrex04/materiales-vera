@@ -16,7 +16,10 @@
 
         <div class="form-group">
           <label for="password">Contraseña</label>
-          <input type="password" id="password" v-model="password" required placeholder="******" />
+          <div class="password-input-wrap">
+            <input :type="mostrarPassword ? 'text' : 'password'" id="password" v-model="password" required placeholder="******" />
+            <TogglePassword v-model:visible="mostrarPassword" />
+          </div>
         </div>
 
         <p v-if="mensajeError" class="error">{{ mensajeError }}</p>
@@ -35,10 +38,12 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { API_URL } from '@/config';
 import { iniciarCarga, detenerCarga } from '@/loading';
+import TogglePassword from '@/components/TogglePassword.vue';
 
 // Variables reactivas
 const email = ref('');
 const password = ref('');
+const mostrarPassword = ref(false);
 const mensajeError = ref('');
 const cargando = ref(false);
 

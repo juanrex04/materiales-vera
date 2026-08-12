@@ -632,6 +632,51 @@ textarea:focus {
   cursor: not-allowed;
 }
 
+.login-box .password-input-wrap {
+  position: relative;
+}
+
+.login-box .password-input-wrap input {
+  padding-right: 2.75rem;
+}
+
+.login-box .toggle-password {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: auto;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.login-box .password-input-wrap .toggle-password:hover {
+  color: #64748b;
+  transform: translateY(-50%);
+  box-shadow: none;
+}
+
+.login-box .toggle-password:focus-visible {
+  outline: 2px solid var(--primary-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.login-box .password-input-wrap:focus-within .toggle-password {
+  color: var(--primary-blue);
+}
+
 /* ========================================================
    COLORES CONDICIONALES PARA CELDAS DE TABLAS
    ======================================================== */

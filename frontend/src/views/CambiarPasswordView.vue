@@ -7,17 +7,26 @@
       <form @submit.prevent="cambiarContraseña">
         <div class="form-group">
           <label>Contraseña Actual</label>
-          <input type="password" v-model="passwordActual" required placeholder="Ingresa tu contraseña actual (12345)" />
+          <div class="password-input-wrap">
+            <input :type="mostrarActual ? 'text' : 'password'" v-model="passwordActual" required placeholder="Ingresa tu contraseña actual (12345)" />
+            <TogglePassword v-model:visible="mostrarActual" />
+          </div>
         </div>
 
         <div class="form-group">
           <label>Nueva Contraseña</label>
-          <input type="password" v-model="passwordNueva" required placeholder="Mínimo 6 caracteres" />
+          <div class="password-input-wrap">
+            <input :type="mostrarNueva ? 'text' : 'password'" v-model="passwordNueva" required placeholder="Mínimo 6 caracteres" />
+            <TogglePassword v-model:visible="mostrarNueva" />
+          </div>
         </div>
 
         <div class="form-group">
           <label>Confirmar Nueva Contraseña</label>
-          <input type="password" v-model="passwordConfirmar" required placeholder="Repite la nueva contraseña" />
+          <div class="password-input-wrap">
+            <input :type="mostrarConfirmar ? 'text' : 'password'" v-model="passwordConfirmar" required placeholder="Repite la nueva contraseña" />
+            <TogglePassword v-model:visible="mostrarConfirmar" />
+          </div>
         </div>
 
         <p v-if="mensajeError" class="error">{{ mensajeError }}</p>
@@ -37,11 +46,15 @@ import { useRouter } from 'vue-router';
 import { decodificarToken } from '@/auth';
 import { peticion } from '@/api';
 import { iniciarCarga, detenerCarga } from '@/loading';
+import TogglePassword from '@/components/TogglePassword.vue';
 
 const router = useRouter();
 const passwordActual = ref('');
 const passwordNueva = ref('');
 const passwordConfirmar = ref('');
+const mostrarActual = ref(false);
+const mostrarNueva = ref(false);
+const mostrarConfirmar = ref(false);
 const mensajeError = ref('');
 const mensajeExito = ref('');
 const cargando = ref(false);
