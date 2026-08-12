@@ -79,32 +79,32 @@ function cuerpoChecklist(overrides = {}) {
 
 describe('Sanitización de inputs', () => {
   describe('Rechazos (400) sin llegar a la DB', () => {
-    it('login con email <script>', async () => {
-      const res = await api('post', '/api/login', { email: '<script>alert(1)</script>', password: 'x' });
+    it('login con documento <script>', async () => {
+      const res = await api('post', '/api/login', { documento: '<script>alert(1)</script>', password: 'x' });
       expect(res.status).toBe(400);
       expect(llamadas).toHaveLength(0);
     });
 
     it('colaborador nombre <script>', async () => {
-      const res = await api('post', '/api/admin/colaboradores', { nombre: '<script>alert(1)</script>', email: 'ok@test.com', rol_id: 1 });
+      const res = await api('post', '/api/admin/colaboradores', { nombre: '<script>alert(1)</script>', documento: '11111', rol_id: 1 });
       expect(res.status).toBe(400);
       expect(llamadas).toHaveLength(0);
     });
 
     it('colaborador nombre demasiado corto', async () => {
-      const res = await api('post', '/api/admin/colaboradores', { nombre: 'A', email: 'ok@test.com', rol_id: 1 });
+      const res = await api('post', '/api/admin/colaboradores', { nombre: 'A', documento: '11111', rol_id: 1 });
       expect(res.status).toBe(400);
       expect(llamadas).toHaveLength(0);
     });
 
-    it('colaborador email inválido', async () => {
-      const res = await api('post', '/api/admin/colaboradores', { nombre: 'Juan Perez', email: 'no-es-correo', rol_id: 1 });
+    it('colaborador documento inválido', async () => {
+      const res = await api('post', '/api/admin/colaboradores', { nombre: 'Juan Perez', documento: 'abc', rol_id: 1 });
       expect(res.status).toBe(400);
       expect(llamadas).toHaveLength(0);
     });
 
     it('colaborador licencia con caracteres no permitidos', async () => {
-      const res = await api('post', '/api/admin/colaboradores', { nombre: 'Juan Perez', email: 'ok@test.com', rol_id: 1, licencia_conducir: '$$$' });
+      const res = await api('post', '/api/admin/colaboradores', { nombre: 'Juan Perez', documento: '11111', rol_id: 1, licencia_conducir: '$$$' });
       expect(res.status).toBe(400);
       expect(llamadas).toHaveLength(0);
     });
@@ -152,7 +152,7 @@ describe('Sanitización de inputs', () => {
     });
 
     it('PUT colaborador id no numérico', async () => {
-      const res = await api('put', '/api/admin/colaboradores/abc', { nombre: 'Juan Perez', email: 'ok@test.com', rol_id: 1 });
+      const res = await api('put', '/api/admin/colaboradores/abc', { nombre: 'Juan Perez', documento: '11111', rol_id: 1 });
       expect(res.status).toBe(400);
       expect(llamadas).toHaveLength(0);
     });
@@ -209,10 +209,10 @@ describe('Sanitización de inputs', () => {
       expect(upd.params[1]).toBe('Mazda');
     });
 
-    it('colaborador: email normalizado, rol numérico, contraseña hasheada', async () => {
+    it('colaborador: documento normalizado, rol numérico, contraseña hasheada', async () => {
       const res = await api('post', '/api/admin/colaboradores', {
         nombre: ' Juan Perez ',
-        email: '  NUEVO@TEST.com  ',
+        documento: ' 1234567 ',
         rol_id: '2',
         licencia_conducir: ' C1-123 '
       });
@@ -220,7 +220,7 @@ describe('Sanitización de inputs', () => {
       const ins = capturaInsert('colaboradores');
       expect(ins).toBeTruthy();
       expect(ins.params[0]).toBe('Juan Perez');
-      expect(ins.params[1]).toBe('nuevo@test.com');
+      expect(ins.params[1]).toBe('1234567');
       expect(ins.params[3]).toBe(2);
       expect(typeof ins.params[3]).toBe('number');
       expect(ins.params[4]).toBe('C1-123');
@@ -306,7 +306,7 @@ describe('Sanitización de inputs', () => {
     });
 
     it('login con usuario inexistente (stub) → 401', async () => {
-      const res = await api('post', '/api/login', { email: 'admin@materialesvera.com', password: '12345' });
+      const res = await api('post', '/api/login', { documento: '11111', password: '12345' });
       expect(res.status).toBe(401);
     });
 

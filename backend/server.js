@@ -139,23 +139,25 @@ const loginLimiter = rateLimit({
 })
 
 app.post('/api/login',loginLimiter, [
-  body('email')
+  body('documento')
     .trim()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Debe ser un correo electronico válido'),
+    .stripLow()
+    .isLength({ min: 4, max: 20 })
+    .withMessage('El documento debe tener entre 4 y 20 dígitos')
+    .matches(/^\d+$/)
+    .withMessage('El documento solo debe contener números'),
   body('password')
     .notEmpty()
     .withMessage('La contraseña es requerida')
 ], validar, async (req, res) => {
-  const { email, password } = req.body;
+  const { documento, password } = req.body;
   try {
     const [usuarios] = await pool.query(`
       SELECT c.*, r.nombre as nombre_rol 
       FROM colaboradores c 
       JOIN roles r ON c.rol_id = r.id 
-      WHERE c.email = ?
-    `, [email]);
+      WHERE c.documento = ?
+    `, [documento]);
 
     if (usuarios.length === 0) return res.status(401).json({ error: 'Credenciales incorrectas.' });
 
@@ -187,7 +189,7 @@ app.post('/api/login',loginLimiter, [
 app.get('/api/admin/colaboradores', verificarToken, esAdmin, async (req, res) => {
   try {
     const baseQuery = `FROM colaboradores c JOIN roles r ON c.rol_id = r.id`;
-    const seleccion = `SELECT c.id, c.nombre, c.email, r.nombre as rol, c.licencia_conducir ${baseQuery}`;
+    const seleccion = `SELECT c.id, c.nombre, c.documento, r.nombre as rol, c.licencia_conducir ${baseQuery}`;
 
     if (req.query.pagina) {
       const { porPagina, offset } = obtenerPaginacion(req);
@@ -209,11 +211,13 @@ app.post('/api/admin/colaboradores', verificarToken, esAdmin, [
     .withMessage('El nombre debe tener entre 2 y 100 caracteres')
     .matches(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ '.]+$/)
     .withMessage('El nombre contiene caracteres no permitidos'),
-  body('email')
+  body('documento')
     .trim()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Debe ser un correo electrónico válido'),
+    .stripLow()
+    .isLength({ min: 4, max: 20 })
+    .withMessage('El documento debe tener entre 4 y 20 dígitos')
+    .matches(/^\d+$/)
+    .withMessage('El documento solo debe contener números'),
   body('rol_id')
     .isInt({ min: 1 })
     .toInt()
@@ -225,17 +229,17 @@ app.post('/api/admin/colaboradores', verificarToken, esAdmin, [
     .matches(/^[A-Za-z0-9 -]{0,20}$/)
     .withMessage('La licencia de conducción no es válida')
 ], validar, async (req, res) => {
-  const { nombre, email, rol_id, licencia_conducir } = req.body;
+  const { nombre, documento, rol_id, licencia_conducir } = req.body;
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash('12345', salt);
     const [result] = await pool.query(
-      'INSERT INTO colaboradores (nombre, email, password, rol_id, licencia_conducir, debe_cambiar_password) VALUES (?, ?, ?, ?, ?, TRUE)',
-      [nombre, email, hashedPassword, rol_id, licencia_conducir || null]
+      'INSERT INTO colaboradores (nombre, documento, password, rol_id, licencia_conducir, debe_cambiar_password) VALUES (?, ?, ?, ?, ?, TRUE)',
+      [nombre, documento, hashedPassword, rol_id, licencia_conducir || null]
     );
     res.status(201).json({ mensaje: 'Colaborador creado exitosamente', id: result.insertId });
   } catch (err) {
-    if (esErrorDuplicado(err)) return res.status(400).json({ error: 'Ya existe un colaborador con ese correo electrónico.' });
+    if (esErrorDuplicado(err)) return res.status(400).json({ error: 'Ya existe un colaborador con ese documento.' });
     res.status(500).json({ error: 'Error interno en el servidor, notifique administración' });
   }
 });
@@ -251,11 +255,13 @@ app.put('/api/admin/colaboradores/:id', verificarToken, esAdmin, [
     .withMessage('El nombre debe tener entre 2 y 100 caracteres')
     .matches(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ '.]+$/)
     .withMessage('El nombre contiene caracteres no permitidos'),
-  body('email')
+  body('documento')
     .trim()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Debe ser un correo electrónico válido'),
+    .stripLow()
+    .isLength({ min: 4, max: 20 })
+    .withMessage('El documento debe tener entre 4 y 20 dígitos')
+    .matches(/^\d+$/)
+    .withMessage('El documento solo debe contener números'),
   body('rol_id')
     .isInt({ min: 1 })
     .toInt()
@@ -268,12 +274,12 @@ app.put('/api/admin/colaboradores/:id', verificarToken, esAdmin, [
     .withMessage('La licencia de conducción no es válida')
 ], validar, async (req, res) => {
   const { id } = req.params;
-  const { nombre, email, rol_id, licencia_conducir } = req.body;
+  const { nombre, documento, rol_id, licencia_conducir } = req.body;
   try {
-    await pool.query('UPDATE colaboradores SET nombre = ?, email = ?, rol_id = ?, licencia_conducir = ? WHERE id = ?', [nombre, email, rol_id, licencia_conducir || null, id]);
+    await pool.query('UPDATE colaboradores SET nombre = ?, documento = ?, rol_id = ?, licencia_conducir = ? WHERE id = ?', [nombre, documento, rol_id, licencia_conducir || null, id]);
     res.json({ mensaje: 'Colaborador actualizado' });
   } catch (err) {
-    if (esErrorDuplicado(err)) return res.status(400).json({ error: 'Ya existe un colaborador con ese correo electrónico.' });
+    if (esErrorDuplicado(err)) return res.status(400).json({ error: 'Ya existe un colaborador con ese documento.' });
     res.status(500).json({ error: 'Error interno en el servidor, notifique administración' });
   }
 });

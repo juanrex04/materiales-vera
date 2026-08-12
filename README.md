@@ -102,9 +102,9 @@ En `frontend/.env` define `VITE_API_URL=http://localhost:3000` y abre `http://lo
 
 ### 5. Usuario inicial
 
-| Email | Contraseña | Rol |
+| Documento | Contraseña | Rol |
 |---|---|---|
-| `admin@materialesvera.com` | `12345` | Admin |
+| `11111` | `12345` | Admin |
 
 En el primer inicio de sesión se solicitará cambiar la contraseña. En producción, cambia la contraseña del admin antes de compartir el acceso.
 

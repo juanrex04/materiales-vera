@@ -14,7 +14,7 @@
                         <thead>
                             <tr>
                                 <th>Nombre</th>
-                                <th>Correo Electrónico</th>
+                                <th>Documento</th>
                                 <th>Rol de Sistema</th>
                                 <th>Licencia de Conducción</th>
                                 <th>Acciones</th>
@@ -24,7 +24,7 @@
                             <SkeletonTabla v-if="cargando" :columnas="5" :filas="5" />
                             <tr v-for="c in listaColaboradores" :key="c.id">
                                 <td><strong>{{ c.nombre }}</strong></td>
-                                <td>{{ c.email }}</td>
+                                <td>{{ c.documento }}</td>
                                 <td><span :class="['badge-rol', c.rol.toLowerCase()]">{{ c.rol }}</span></td>
                                 <td>{{ c.licencia_conducir || 'No Aplica' }}</td>
                                 <td>
@@ -57,7 +57,7 @@
                     <form @submit.prevent="guardarColaborador">
                         <div class="form-vertical">
                             <div><label>Nombre Completo:</label><input v-model="formulario.nombre" required /></div>
-                            <div><label>Email:</label><input type="email" v-model="formulario.email" required /></div>
+                            <div><label>Documento:</label><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="20" v-model="formulario.documento" placeholder="Ej: 1234567890" required /></div>
 
                             <div v-if="!modoEdicion" class="aviso-password">
                                 <p>La contraseña inicial será: <strong>12345</strong></p>
@@ -109,7 +109,7 @@ const modoEdicion = ref(false);
 const pagina = ref(1);
 const porPagina = ref(10);
 const totalColaboradores = ref(0);
-const formulario = ref({ id: null, nombre: '', email: '', rol_id: 2, licencia_conducir: '' });
+const formulario = ref({ id: null, nombre: '', documento: '', rol_id: 2, licencia_conducir: '' });
 
 onMounted(() => { obtenerColaboradores(); });
 
@@ -135,7 +135,7 @@ const obtenerColaboradores = async () => {
 
 const abrirModalNuevo = () => {
     modoEdicion.value = false;
-    formulario.value = { id: null, nombre: '', email: '', rol_id: 2, licencia_conducir: '' };
+    formulario.value = { id: null, nombre: '', documento: '', rol_id: 2, licencia_conducir: '' };
     mostrarModal.value = true;
 };
 

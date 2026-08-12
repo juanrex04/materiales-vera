@@ -10,8 +10,8 @@
 
       <form @submit.prevent="hacerLogin">
         <div class="form-group">
-          <label for="email">Correo Electrónico</label>
-          <input type="email" id="email" v-model="email" required placeholder="Ingresa el correo empresarial" />
+          <label for="documento">Número de Documento</label>
+          <input type="text" id="documento" inputmode="numeric" pattern="[0-9]*" maxlength="20" v-model="documento" required placeholder="Ingresa tu documento (cédula)" />
         </div>
 
         <div class="form-group">
@@ -41,7 +41,7 @@ import { iniciarCarga, detenerCarga } from '@/loading';
 import TogglePassword from '@/components/TogglePassword.vue';
 
 // Variables reactivas
-const email = ref('');
+const documento = ref('');
 const password = ref('');
 const mostrarPassword = ref(false);
 const mensajeError = ref('');
@@ -58,7 +58,7 @@ const hacerLogin = async () => {
     const respuesta = await fetch(`${API_URL}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.value, password: password.value })
+      body: JSON.stringify({ documento: documento.value, password: password.value })
     });
 
     const data = await respuesta.json();
