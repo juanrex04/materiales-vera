@@ -510,6 +510,13 @@ th {
   text-align: left;
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 .form-group {
   margin-bottom: 1rem;
   text-align: left;
@@ -1045,7 +1052,7 @@ a.btn-nav {
   /* Login: logo arriba y formulario debajo, logo más pequeño */
   .login-layout {
     flex-direction: column;
-    gap: 1.5rem;
+    gap: .5rem;
   }
 
   .login-brand {
@@ -1053,8 +1060,8 @@ a.btn-nav {
   }
 
   .login-logo {
-    width: 100px;
-    height: 100px;
+    width: 250px;
+    height: 250px;
   }
 
   /* Evita que el título y la hamburguesa se apilen verticalmente */
@@ -1138,6 +1145,34 @@ a.btn-nav {
   .btn-edit {
     width: 100%;
     margin-bottom: 15px;
+  }
+
+  /* Evita que la página se desborde horizontalmente en móviles */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .content {
+    padding: 1rem;
+  }
+
+  .gestion-seccion {
+    padding: 1rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-checkboxes {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    padding: 1.5rem;
+    max-height: 90vh;
+    overflow-y: auto;
   }
 }
 
