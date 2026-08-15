@@ -23,11 +23,11 @@
                         <tbody>
                             <SkeletonTabla v-if="cargando" :columnas="5" :filas="5" />
                             <tr v-for="c in listaColaboradores" :key="c.id">
-                                <td><strong>{{ c.nombre }}</strong></td>
-                                <td>{{ c.documento }}</td>
-                                <td><span :class="['badge-rol', c.rol.toLowerCase()]">{{ c.rol }}</span></td>
-                                <td>{{ c.licencia_conducir || 'No Aplica' }}</td>
-                                <td>
+                                <td data-label="Nombre"><strong>{{ c.nombre }}</strong></td>
+                                <td data-label="Documento">{{ c.documento }}</td>
+                                <td data-label="Rol"><span :class="['badge-rol', c.rol.toLowerCase()]">{{ c.rol }}</span></td>
+                                <td data-label="Licencia">{{ c.licencia_conducir || 'No Aplica' }}</td>
+                                <td data-label="Acciones">
                                     <div class="acciones-tabla">
                                         <button @click="abrirModalEditar(c)" class="btn-edit">Editar</button>
                                         <button @click="restablecerClave(c)" class="btn-reset">Clave</button>

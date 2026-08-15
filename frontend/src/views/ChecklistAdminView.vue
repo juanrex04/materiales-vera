@@ -68,18 +68,18 @@
             <tbody>
               <SkeletonTabla v-if="cargando" :columnas="5" :filas="5" />
               <tr v-for="chk in listaChecklists" :key="chk.id">
-                <td>
+                <td data-label="Fecha y Hora">
                   <strong>{{ formatearFecha(chk.fecha_formateada) }}</strong><br>
                   <small class="text-muted">{{ chk.hora }}</small>
                 </td>
-                <td>{{ chk.conductor }}</td>
-                <td>{{ chk.placa }} ({{ chk.marca }})</td>
-                <td>
+                <td data-label="Conductor">{{ chk.conductor }}</td>
+                <td data-label="Vehículo">{{ chk.placa }} ({{ chk.marca }})</td>
+                <td data-label="Estado">
                   <span :class="chk.apto_para_trabajar ? 'badge-estado disponible' : 'badge-estado mantenimiento'">
                     {{ chk.apto_para_trabajar ? 'Apto' : 'Con Fallas' }}
                   </span>
                 </td>
-                <td>
+                <td data-label="Acciones">
                   <button @click="abrirModalDetalles(chk)" class="btn-primary">Ver Reporte</button>
                 </td>
               </tr>

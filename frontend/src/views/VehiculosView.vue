@@ -26,12 +26,12 @@
                         <tbody>
                             <SkeletonTabla v-if="cargando" :columnas="8" :filas="5" />
                             <tr v-for="v in listaVehiculos" :key="v.id">
-                                <td><strong>{{ v.placa }}</strong></td>
-                                <td>{{ v.marca }}</td>
-                                <td>{{ v.capacidad_carga_kg }} kg</td>
-                                <td><span :class="['badge-estado', v.estado.toLowerCase().replace(' ', '-')]">{{
+                                <td data-label="Placa"><strong>{{ v.placa }}</strong></td>
+                                <td data-label="Marca">{{ v.marca }}</td>
+                                <td data-label="Capacidad">{{ v.capacidad_carga_kg }} kg</td>
+                                <td data-label="Estado"><span :class="['badge-estado', v.estado.toLowerCase().replace(' ', '-')]">{{
                                     v.estado }}</span></td>
-                                <td
+                                <td data-label="SOAT"
                                     :class="{ 'celda-roja': v.soat_estado === 'VENCIDO', 'celda-amarilla': v.soat_estado === 'PROXIMO' }">
                                     <strong>{{ formatearFecha(v.fecha_soat) }}</strong>
                                     <div class="dias-texto">
@@ -43,7 +43,7 @@
                                     </div>
                                 </td>
 
-                                <td
+                                <td data-label="Tecnomecánica"
                                     :class="{ 'celda-roja': v.tecno_estado === 'VENCIDO', 'celda-amarilla': v.tecno_estado === 'PROXIMO' }">
                                     <strong>{{ formatearFecha(v.fecha_tecnomecanica) }}</strong>
                                     <div class="dias-texto">
@@ -55,7 +55,7 @@
                                     </div>
                                 </td>
 
-                                <td
+                                <td data-label="Cambio Aceite"
                                     :class="{ 'celda-roja': v.aceite_estado === 'VENCIDO', 'celda-amarilla': v.aceite_estado === 'PROXIMO' }">
                                     <template v-if="v.fecha_ultimo_cambio_aceite">
                                         <strong>{{ formatearFecha(v.fecha_ultimo_cambio_aceite) }}</strong>
@@ -71,7 +71,7 @@
                                         <span class="badge-sin-dato">Sin registro</span>
                                     </template>
                                 </td>
-                                <td>
+                                <td data-label="Acciones">
                                     <div class="acciones-tabla">
                                         <button @click="abrirModalEditar(v)" class="btn-edit">Editar</button>
                                         <button @click="eliminarVehiculo(v.id)" class="btn-delete">Eliminar</button>
