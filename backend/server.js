@@ -167,7 +167,7 @@ app.post('/api/login',loginLimiter, [
     if (!contraseñaValida) return res.status(401).json({ error: 'Credenciales incorrectas.' });
 
     const token = jwt.sign(
-      { id: usuario.id, rol: usuario.nombre_rol, nombre: usuario.nombre },
+      { id: usuario.id, rol: usuario.nombre_rol, nombre: usuario.nombre, debe_cambiar_password: !!usuario.debe_cambiar_password },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
@@ -293,6 +293,27 @@ app.delete('/api/admin/colaboradores/:id', verificarToken, esAdmin, [
     await pool.query('DELETE FROM colaboradores WHERE id = ?', [req.params.id]);
     res.json({ mensaje: 'Colaborador eliminado' });
   } catch (err) { res.status(400).json({ error: 'No se puede eliminar un usuario con registros activos.' }); }
+});
+
+app.post('/api/admin/colaboradores/:id/reset-password', verificarToken, esAdmin, [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('ID de colaborador inválido')
+], validar, async (req, res) => {
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('12345', salt);
+    const [result] = await pool.query(
+      'UPDATE colaboradores SET password = ?, debe_cambiar_password = TRUE WHERE id = ?',
+      [hashedPassword, req.params.id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Colaborador no encontrado' });
+    }
+    res.json({ mensaje: 'Clave restablecida a 12345. El colaborador deberá cambiarla al iniciar sesión.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error interno en el servidor, notifique administración' });
+  }
 });
 
 // ==========================================
@@ -720,38 +741,35 @@ app.use((err, req, res, next) => {
 INICIAR SESION POR PRIMERA VEZ*/
 
 app.put('/api/cambiar-password', verificarToken, [
-  body('password_actual')
-    .notEmpty()
-    .withMessage('La contraseña actual es requerida'),
   body('password_nuevo')
-    .isLength({ min: 6 })
-    .withMessage('La nueva contraseña debe tener mínimo 6 caracteres')
+    .isLength({ min: 8 })
+    .withMessage('La nueva contraseña debe tener mínimo 8 caracteres')
+    .matches(/\d/)
+    .withMessage('La nueva contraseña debe contener al menos un número')
 ], validar, async (req, res) => {
-  const { password_actual, password_nuevo } = req.body;
+  const { password_nuevo } = req.body;
 
   try {
-    // 1. Buscar al usuario
-    const [usuarios] = await pool.query('SELECT * FROM colaboradores WHERE id = ?', [req.usuario.id]);
-    if (usuarios.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-
-    // 2. Verificar que la contraseña actual sea correcta
-    const usuario = usuarios[0];
-    const contraseñaValida = await bcrypt.compare(password_actual, usuario.password);
-    if (!contraseñaValida) {
-      return res.status(401).json({ error: 'La contraseña actual es incorrecta' });
-    }
-
-    // 3. Hashear la nueva contraseña y actualizar
+    // 1. Hashear la nueva contraseña y actualizar
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password_nuevo, salt);
-    await pool.query(
+    const [result] = await pool.query(
       'UPDATE colaboradores SET password = ?, debe_cambiar_password = FALSE WHERE id = ?',
       [hashedPassword, req.usuario.id]
     );
 
-    res.json({ mensaje: 'Contraseña actualizada exitosamente' });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // 2. Emitir un token nuevo con el flag ya en false (el usuario sigue con sesión activa)
+    const token = jwt.sign(
+      { id: req.usuario.id, rol: req.usuario.rol, nombre: req.usuario.nombre, debe_cambiar_password: false },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+
+    res.json({ mensaje: 'Contraseña actualizada exitosamente', token });
   } catch (error) {
     console.error('Error al cambiar contraseña:', error);
     res.status(500).json({ error: 'Error interno del servidor' });

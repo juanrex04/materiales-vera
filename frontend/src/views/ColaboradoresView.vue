@@ -30,6 +30,7 @@
                                 <td>
                                     <div class="acciones-tabla">
                                         <button @click="abrirModalEditar(c)" class="btn-edit">Editar</button>
+                                        <button @click="restablecerClave(c)" class="btn-reset">Clave</button>
                                         <button @click="eliminarColaborador(c.id)" class="btn-delete">Eliminar</button>
                                     </div>
                                 </td>
@@ -164,6 +165,23 @@ const guardarColaborador = async () => {
         mostrarToast('error', 'No se pudo guardar el colaborador', error.message);
     }
     finally { guardando.value = false; }
+};
+
+const restablecerClave = async (c) => {
+    const confirmado = await confirmarAccion(
+        'Restablecer clave',
+        `¿Deseas restablecer la clave de ${c.nombre} a 12345? Deberá cambiarla al iniciar sesión.`
+    );
+    if (!confirmado) return;
+    iniciarCarga('Restableciendo clave...');
+    errorMensaje.value = '';
+    try {
+        await peticion(`/api/admin/colaboradores/${c.id}/reset-password`, { metodo: 'POST' });
+        mostrarToast('success', `Clave de ${c.nombre} restablecida a 12345`);
+    } catch (error) {
+        mostrarToast('error', 'No se pudo restablecer la clave', error.message);
+    }
+    finally { detenerCarga(); }
 };
 
 const eliminarColaborador = async (id) => {

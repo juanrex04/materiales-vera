@@ -310,9 +310,47 @@ describe('Sanitización de inputs', () => {
       expect(res.status).toBe(401);
     });
 
-    it('cambiar-password con usuario inexistente (stub) → 404', async () => {
-      const res = await api('put', '/api/cambiar-password', { password_actual: '12345', password_nuevo: 'nueva123' }, tokenConductor);
-      expect(res.status).toBe(404);
+    it('cambiar-password válido → 200, marca FALSE y devuelve token nuevo', async () => {
+      const res = await api('put', '/api/cambiar-password', { password_nuevo: 'nueva123' }, tokenConductor);
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeTruthy();
+      const update = llamadas.find((c) => c.sql.includes('UPDATE colaboradores SET password'));
+      expect(update).toBeTruthy();
+      expect(update.sql).toContain('debe_cambiar_password = FALSE');
+      expect(update.params[1]).toBe(2);
+      expect(update.params[0]).not.toBe('nueva123');
+      const nuevoToken = jwt.decode(res.body.token);
+      expect(nuevoToken.debe_cambiar_password).toBe(false);
+    });
+
+    it('cambiar-password con clave corta (< 8) → 400', async () => {
+      const res = await api('put', '/api/cambiar-password', { password_nuevo: 'abc123' }, tokenConductor);
+      expect(res.status).toBe(400);
+    });
+
+    it('cambiar-password sin número → 400', async () => {
+      const res = await api('put', '/api/cambiar-password', { password_nuevo: 'solotexto' }, tokenConductor);
+      expect(res.status).toBe(400);
+    });
+
+    it('reset-password con conductor → 403', async () => {
+      const res = await api('post', '/api/admin/colaboradores/1/reset-password', undefined, tokenConductor);
+      expect(res.status).toBe(403);
+    });
+
+    it('reset-password con ID inválido → 400', async () => {
+      const res = await api('post', '/api/admin/colaboradores/abc/reset-password');
+      expect(res.status).toBe(400);
+    });
+
+    it('reset-password válido → 200 y marca debe_cambiar_password = TRUE', async () => {
+      const res = await api('post', '/api/admin/colaboradores/5/reset-password');
+      expect(res.status).toBe(200);
+      const update = llamadas.find((c) => c.sql.includes('UPDATE colaboradores SET password'));
+      expect(update).toBeTruthy();
+      expect(update.sql).toContain('debe_cambiar_password = TRUE');
+      expect(update.params[1]).toBe('5');
+      expect(update.params[0]).not.toBe('12345');
     });
   });
 });

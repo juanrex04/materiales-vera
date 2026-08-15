@@ -2,7 +2,6 @@ import { API_URL } from '@/config';
 
 export const manejarNoAutorizado = () => {
   localStorage.removeItem('token');
-  localStorage.removeItem('debe_cambiar_password');
   if (window.location.pathname !== '/login') {
     window.location.href = '/login';
   }

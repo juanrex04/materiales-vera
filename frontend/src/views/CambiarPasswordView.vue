@@ -2,21 +2,14 @@
   <div class="login-container">
     <div class="login-box">
       <h2>Cambiar Contraseña</h2>
-      <p>Es tu primer inicio de sesión. Debes cambiar tu contraseña para continuar.</p>
+      <p v-if="esPrimerIngreso">Es tu primer inicio de sesión. Debes cambiar tu contraseña para continuar.</p>
+      <p v-else>Puedes cambiar tu contraseña en cualquier momento.</p>
 
       <form @submit.prevent="cambiarContraseña">
         <div class="form-group">
-          <label>Contraseña Actual</label>
-          <div class="password-input-wrap">
-            <input :type="mostrarActual ? 'text' : 'password'" v-model="passwordActual" required placeholder="Ingresa tu contraseña actual (12345)" />
-            <TogglePassword v-model:visible="mostrarActual" />
-          </div>
-        </div>
-
-        <div class="form-group">
           <label>Nueva Contraseña</label>
           <div class="password-input-wrap">
-            <input :type="mostrarNueva ? 'text' : 'password'" v-model="passwordNueva" required placeholder="Mínimo 6 caracteres" />
+            <input :type="mostrarNueva ? 'text' : 'password'" v-model="passwordNueva" required placeholder="Mínimo 8 caracteres con un número" />
             <TogglePassword v-model:visible="mostrarNueva" />
           </div>
         </div>
@@ -49,16 +42,15 @@ import { iniciarCarga, detenerCarga } from '@/loading';
 import TogglePassword from '@/components/TogglePassword.vue';
 
 const router = useRouter();
-const passwordActual = ref('');
 const passwordNueva = ref('');
 const passwordConfirmar = ref('');
-const mostrarActual = ref(false);
 const mostrarNueva = ref(false);
 const mostrarConfirmar = ref(false);
 const mensajeError = ref('');
 const mensajeExito = ref('');
 const cargando = ref(false);
-const usuario = decodificarToken()
+const usuario = decodificarToken();
+const esPrimerIngreso = ref(usuario?.debe_cambiar_password === true);
 
 const cambiarContraseña = async () => {
   mensajeError.value = '';
@@ -69,23 +61,27 @@ const cambiarContraseña = async () => {
     return;
   }
 
-  if (passwordNueva.value.length < 6) {
-    mensajeError.value = 'La nueva contraseña debe tener mínimo 6 caracteres';
+  if (passwordNueva.value.length < 8) {
+    mensajeError.value = 'La nueva contraseña debe tener mínimo 8 caracteres';
+    return;
+  }
+
+  if (!/\d/.test(passwordNueva.value)) {
+    mensajeError.value = 'La nueva contraseña debe contener al menos un número';
     return;
   }
 
   cargando.value = true;
   iniciarCarga('Actualizando contraseña...');
   try {
-    await peticion('/api/cambiar-password', {
+    const data = await peticion('/api/cambiar-password', {
       metodo: 'PUT',
       cuerpo: {
-        password_actual: passwordActual.value,
         password_nuevo: passwordNueva.value
       }
     });
 
-    localStorage.setItem('debe_cambiar_password', 'false');
+    localStorage.setItem('token', data.token);
     mensajeExito.value = 'Contraseña actualizada. Redirigiendo...';
     detenerCarga();
 

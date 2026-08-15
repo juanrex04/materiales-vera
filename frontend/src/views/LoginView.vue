@@ -68,7 +68,6 @@ const hacerLogin = async () => {
     }
 
     localStorage.setItem('token', data.token);
-    localStorage.setItem('debe_cambiar_password', data.debe_cambiar_password);
 
     if (data.debe_cambiar_password) {
       router.push('/cambiar-password');

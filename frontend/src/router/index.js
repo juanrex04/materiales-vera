@@ -25,7 +25,7 @@ const router = createRouter({
 router.beforeEach((to, from) => {
   const token = localStorage.getItem('token');
   const usuario = token ? decodificarToken(token) : null
-  const debeCambiar = localStorage.getItem('debe_cambiar_password') === 'true';
+  const debeCambiar = usuario?.debe_cambiar_password === true;
 
   if (!token && to.name !== 'login')
     return { name: 'login' };

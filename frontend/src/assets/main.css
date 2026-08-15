@@ -237,6 +237,24 @@ body {
   background: linear-gradient(135deg, #dc2626, #b91c1c);
 }
 
+.btn-reset {
+  background: linear-gradient(135deg, var(--primary-blue), #1d4ed8);
+  color: white !important;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-reset:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+}
+
 /* ========================================================
    3. TARJETAS Y SECCIONES
    ======================================================== */
@@ -1179,6 +1197,7 @@ a.btn-nav {
   }
 
   .acciones-tabla .btn-edit,
+  .acciones-tabla .btn-reset,
   .acciones-tabla .btn-delete {
     width: 100%;
     margin: 0;

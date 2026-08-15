@@ -4,7 +4,7 @@
             <img class="brand-logo" src="/logo.png" alt="VERA S.A.S." />
             <h2>Materiales Vera - Portal</h2>
         </div>
-        
+
         <button class="hamburger" @click="menuAbierto = !menuAbierto">
             {{ menuAbierto ? '✖' : '☰' }}
         </button>
@@ -29,6 +29,17 @@
                     Verificar Checklist
                 </router-link>
             </div>
+
+            <div v-if="rolUsuario === 'Conductor'" class="admin-buttons">
+                <router-link to="/conductores" class="btn-nav" active-class="activo">
+                    Inspección preoperacional
+                </router-link>
+            </div>
+            
+            <router-link to="/cambiar-password" class="btn-nav" active-class="activo">
+                Cambiar Clave
+            </router-link>
+
             <button @click="cerrarSesion" class="btn-logout">Cerrar Sesión</button>
         </div>
     </header>
