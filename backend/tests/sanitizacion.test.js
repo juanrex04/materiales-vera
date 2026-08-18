@@ -262,6 +262,28 @@ describe('Sanitización de inputs', () => {
       expect(select).toBeTruthy();
       expect(select.params[0]).toBe('%admin%');
     });
+
+    it('filtro de vehiculos por placa y estado sanitiza placa y filtra en SQL', async () => {
+      const res = await api('get', '/api/admin/vehiculos?placa=%20abc-123%3Cscript%3E%20&estado=Disponible&pagina=1');
+      expect(res.status).toBe(200);
+      const select = llamadas.find((c) => c.sql.includes('FROM vehiculos'));
+      expect(select).toBeTruthy();
+      expect(select.sql).toContain('placa LIKE ?');
+      expect(select.sql).toContain('estado = ?');
+      expect(select.params[0]).toBe('%ABC-123SCRIPT%');
+      expect(select.params[1]).toBe('Disponible');
+    });
+
+    it('filtro de colaboradores por nombre y rol sanitiza nombre y filtra en SQL', async () => {
+      const res = await api('get', '/api/admin/colaboradores?nombre=%20Carlos%3Cscript%3E%20&rol=Conductor&pagina=1');
+      expect(res.status).toBe(200);
+      const select = llamadas.find((c) => c.sql.includes('FROM colaboradores'));
+      expect(select).toBeTruthy();
+      expect(select.sql).toContain('c.nombre LIKE ?');
+      expect(select.sql).toContain('r.nombre = ?');
+      expect(select.params[0]).toBe('%Carlosscript%');
+      expect(select.params[1]).toBe('Conductor');
+    });
   });
 
   describe('Auth y regresión', () => {

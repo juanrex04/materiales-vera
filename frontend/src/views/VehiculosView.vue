@@ -9,6 +9,35 @@
 
                 <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
 
+                <div class="filtros-container">
+                    <div class="form-group filtro-item">
+                        <label>Buscar por Placa:</label>
+                        <input
+                            type="text"
+                            :value="filtros.placa"
+                            @input="onPlacaInput"
+                            placeholder="Ej: ABC-123"
+                            maxlength="10"
+                            class="input-busqueda"
+                        />
+                    </div>
+
+                    <div class="form-group filtro-item">
+                        <label>Estado Operativo:</label>
+                        <select v-model="filtros.estado" class="input-busqueda">
+                            <option value="">Todos los estados</option>
+                            <option value="Disponible">Disponible</option>
+                            <option value="Mantenimiento">Mantenimiento</option>
+                        </select>
+                    </div>
+
+                    <div class="acciones-filtros">
+                        <button type="button" @click="limpiarFiltros" class="btn-edit">
+                            Limpiar Filtros
+                        </button>
+                    </div>
+                </div>
+
                 <div class="tabla-contenedor">
                     <table>
                         <thead>
@@ -81,7 +110,7 @@
                             <EstadoVacioTabla
                                 v-if="!cargando && listaVehiculos.length === 0"
                                 :columnas="8"
-                                :mensaje="errorMensaje ? 'No se pudieron cargar los vehículos.' : 'No hay vehículos registrados en el sistema.'"
+                                :mensaje="errorMensaje ? 'No se pudieron cargar los vehículos.' : (filtrosActivos ? 'No se encontraron vehículos con los filtros aplicados.' : 'No hay vehículos registrados en el sistema.')"
                             />
                         </tbody>
                     </table>
@@ -137,7 +166,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { peticion } from '@/api';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
@@ -157,21 +186,68 @@ const porPagina = ref(10);
 const totalVehiculos = ref(0);
 const formulario = ref({ id: null, placa: '', marca: '', capacidad_carga_kg: '', estado: 'Disponible', fecha_soat: '', fecha_tecnomecanica: '', fecha_ultimo_cambio_aceite: ''});
 
-onMounted(() => { obtenerVehiculos(); });
+const filtros = ref({
+    placa: '',
+    estado: ''
+});
+
+const filtrosActivos = computed(() => Boolean(filtros.value.placa.trim() || filtros.value.estado));
+
+const sanitizarPlaca = (valor) => {
+    if (!valor) return '';
+    return valor.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase().slice(0, 10);
+};
+
+const onPlacaInput = (evento) => {
+    const limpia = sanitizarPlaca(evento.target.value);
+    filtros.value.placa = limpia;
+};
+
+const limpiarFiltros = () => {
+    filtros.value.placa = '';
+    filtros.value.estado = '';
+    pagina.value = 1;
+    obtenerVehiculos();
+};
+
+let debounceTimer = null;
+watch(() => filtros.value.placa, () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        pagina.value = 1;
+        obtenerVehiculos();
+    }, 300);
+});
+
+watch(() => filtros.value.estado, () => {
+    pagina.value = 1;
+    obtenerVehiculos();
+});
 
 watch([pagina, porPagina], () => { obtenerVehiculos(); });
+
+onMounted(() => { obtenerVehiculos(); });
 
 const obtenerVehiculos = async () => {
     cargando.value = true;
     errorMensaje.value = '';
     try {
-        const respuesta = await peticion(`/api/admin/vehiculos?pagina=${pagina.value}&porPagina=${porPagina.value}`);
+        const params = new URLSearchParams({
+            pagina: String(pagina.value),
+            porPagina: String(porPagina.value)
+        });
+
+        const placaLimpia = sanitizarPlaca(filtros.value.placa.trim());
+        if (placaLimpia) params.append('placa', placaLimpia);
+        if (filtros.value.estado) params.append('estado', filtros.value.estado);
+
+        const respuesta = await peticion(`/api/admin/vehiculos?${params.toString()}`);
         const normalizada = Array.isArray(respuesta) ? respuesta : (respuesta?.datos || []);
         listaVehiculos.value = normalizada;
         totalVehiculos.value = Array.isArray(respuesta) ? normalizada.length : (respuesta?.total || 0);
 
         const totalPaginas = Math.max(1, Math.ceil(totalVehiculos.value / porPagina.value));
-        if (pagina.value > totalPaginas) {
+        if (pagina.value > totalPaginas && totalPaginas > 0) {
             pagina.value = totalPaginas;
             obtenerVehiculos();
         }

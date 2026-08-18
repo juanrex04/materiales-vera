@@ -9,6 +9,35 @@
 
                 <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
 
+                <div class="filtros-container">
+                    <div class="form-group filtro-item">
+                        <label>Buscar por Nombre:</label>
+                        <input
+                            type="text"
+                            :value="filtros.nombre"
+                            @input="onNombreInput"
+                            placeholder="Ej: Carlos, Juan..."
+                            maxlength="100"
+                            class="input-busqueda"
+                        />
+                    </div>
+
+                    <div class="form-group filtro-item">
+                        <label>Rol del Sistema:</label>
+                        <select v-model="filtros.rol" class="input-busqueda">
+                            <option value="">Todos los roles</option>
+                            <option value="Admin">Admin</option>
+                            <option value="Conductor">Conductor</option>
+                        </select>
+                    </div>
+
+                    <div class="acciones-filtros">
+                        <button type="button" @click="limpiarFiltros" class="btn-edit">
+                            Limpiar Filtros
+                        </button>
+                    </div>
+                </div>
+
                 <div class="tabla-contenedor">
                     <table>
                         <thead>
@@ -38,7 +67,7 @@
                             <EstadoVacioTabla
                                 v-if="!cargando && listaColaboradores.length === 0"
                                 :columnas="5"
-                                :mensaje="errorMensaje ? 'No se pudieron cargar los colaboradores.' : 'No hay colaboradores registrados en el sistema.'"
+                                :mensaje="errorMensaje ? 'No se pudieron cargar los colaboradores.' : (filtrosActivos ? 'No se encontraron colaboradores con los filtros aplicados.' : 'No hay colaboradores registrados en el sistema.')"
                             />
                         </tbody>
                     </table>
@@ -92,7 +121,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { peticion } from '@/api';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
@@ -112,21 +141,68 @@ const porPagina = ref(10);
 const totalColaboradores = ref(0);
 const formulario = ref({ id: null, nombre: '', documento: '', rol_id: 2, licencia_conducir: '' });
 
-onMounted(() => { obtenerColaboradores(); });
+const filtros = ref({
+    nombre: '',
+    rol: ''
+});
+
+const filtrosActivos = computed(() => Boolean(filtros.value.nombre.trim() || filtros.value.rol));
+
+const sanitizarNombre = (valor) => {
+    if (!valor) return '';
+    return valor.replace(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ '.0-9-]/g, '').slice(0, 100);
+};
+
+const onNombreInput = (evento) => {
+    const limpio = sanitizarNombre(evento.target.value);
+    filtros.value.nombre = limpio;
+};
+
+const limpiarFiltros = () => {
+    filtros.value.nombre = '';
+    filtros.value.rol = '';
+    pagina.value = 1;
+    obtenerColaboradores();
+};
+
+let debounceTimer = null;
+watch(() => filtros.value.nombre, () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        pagina.value = 1;
+        obtenerColaboradores();
+    }, 300);
+});
+
+watch(() => filtros.value.rol, () => {
+    pagina.value = 1;
+    obtenerColaboradores();
+});
 
 watch([pagina, porPagina], () => { obtenerColaboradores(); });
+
+onMounted(() => { obtenerColaboradores(); });
 
 const obtenerColaboradores = async () => {
     cargando.value = true;
     errorMensaje.value = '';
     try {
-        const respuesta = await peticion(`/api/admin/colaboradores?pagina=${pagina.value}&porPagina=${porPagina.value}`);
+        const params = new URLSearchParams({
+            pagina: String(pagina.value),
+            porPagina: String(porPagina.value)
+        });
+
+        const nombreLimpio = sanitizarNombre(filtros.value.nombre.trim());
+        if (nombreLimpio) params.append('nombre', nombreLimpio);
+        if (filtros.value.rol) params.append('rol', filtros.value.rol);
+
+        const respuesta = await peticion(`/api/admin/colaboradores?${params.toString()}`);
         const normalizada = Array.isArray(respuesta) ? respuesta : (respuesta?.datos || []);
         listaColaboradores.value = normalizada;
         totalColaboradores.value = Array.isArray(respuesta) ? normalizada.length : (respuesta?.total || 0);
 
         const totalPaginas = Math.max(1, Math.ceil(totalColaboradores.value / porPagina.value));
-        if (pagina.value > totalPaginas) {
+        if (pagina.value > totalPaginas && totalPaginas > 0) {
             pagina.value = totalPaginas;
             obtenerColaboradores();
         }

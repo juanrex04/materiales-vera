@@ -186,19 +186,40 @@ app.post('/api/login',loginLimiter, [
 // ==========================================
 // 4. MÓDULO ADMIN - CRUD COLABORADORES
 // ==========================================
+function construirFiltrosColaboradores(req) {
+  const condiciones = [];
+  const parametros = [];
+  const { nombre, rol } = req.query;
+  const tNombre = (nombre || '').trim().replace(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ '.0-9-]/g, '');
+  const tRol = (rol || '').trim();
+
+  if (tNombre) {
+    condiciones.push('c.nombre LIKE ?');
+    parametros.push(`%${tNombre}%`);
+  }
+  if (tRol === 'Admin' || tRol === 'Conductor') {
+    condiciones.push('r.nombre = ?');
+    parametros.push(tRol);
+  }
+
+  const where = condiciones.length > 0 ? `WHERE ${condiciones.join(' AND ')}` : '';
+  return { where, parametros };
+}
+
 app.get('/api/admin/colaboradores', verificarToken, esAdmin, async (req, res) => {
   try {
-    const baseQuery = `FROM colaboradores c JOIN roles r ON c.rol_id = r.id`;
-    const seleccion = `SELECT c.id, c.nombre, c.documento, r.nombre as rol, c.licencia_conducir ${baseQuery}`;
+    const { where, parametros } = construirFiltrosColaboradores(req);
+    const baseQuery = `FROM colaboradores c JOIN roles r ON c.rol_id = r.id ${where}`;
+    const seleccion = `SELECT c.id, c.nombre, c.documento, r.nombre as rol, c.licencia_conducir FROM colaboradores c JOIN roles r ON c.rol_id = r.id ${where}`;
 
     if (req.query.pagina) {
       const { porPagina, offset } = obtenerPaginacion(req);
-      const [contador] = await pool.query(`SELECT COUNT(*) as total ${baseQuery}`);
-      const [rows] = await pool.query(`${seleccion} ORDER BY c.nombre ASC LIMIT ? OFFSET ?`, [porPagina, offset]);
+      const [contador] = await pool.query(`SELECT COUNT(*) as total ${baseQuery}`, parametros);
+      const [rows] = await pool.query(`${seleccion} ORDER BY c.nombre ASC LIMIT ? OFFSET ?`, [...parametros, porPagina, offset]);
       return res.json({ datos: rows, total: contador[0].total });
     }
 
-    const [rows] = await pool.query(`${seleccion} ORDER BY c.nombre ASC`);
+    const [rows] = await pool.query(`${seleccion} ORDER BY c.nombre ASC`, parametros);
     res.json(rows);
   } catch (err) { res.status(500).json({ error: 'Error interno en el servidor, notifique administración' }); }
 });
@@ -319,6 +340,26 @@ app.post('/api/admin/colaboradores/:id/reset-password', verificarToken, esAdmin,
 // ==========================================
 // 5. MÓDULO ADMIN - CRUD VEHÍCULOS
 // ==========================================
+function construirFiltrosVehiculos(req) {
+  const condiciones = [];
+  const parametros = [];
+  const { placa, estado } = req.query;
+  const tPlaca = (placa || '').trim().replace(/[^a-zA-Z0-9-]/g, '').toUpperCase();
+  const tEstado = (estado || '').trim();
+
+  if (tPlaca) {
+    condiciones.push('placa LIKE ?');
+    parametros.push(`%${tPlaca}%`);
+  }
+  if (tEstado === 'Disponible' || tEstado === 'Mantenimiento') {
+    condiciones.push('estado = ?');
+    parametros.push(tEstado);
+  }
+
+  const where = condiciones.length > 0 ? `WHERE ${condiciones.join(' AND ')}` : '';
+  return { where, parametros };
+}
+
 // LECTURA CON CÁLCULO DE VENCIMIENTOS
 app.get('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
   try {
@@ -352,15 +393,19 @@ app.get('/api/admin/vehiculos', verificarToken, esAdmin, async (req, res) => {
     };
 
     const fechaActual = new Date();
+    const { where, parametros } = construirFiltrosVehiculos(req);
 
     if (req.query.pagina) {
       const { porPagina, offset } = obtenerPaginacion(req);
-      const [contador] = await pool.query('SELECT COUNT(*) as total FROM vehiculos');
-      const [vehiculos] = await pool.query('SELECT * FROM vehiculos ORDER BY id ASC LIMIT ? OFFSET ?', [porPagina, offset]);
+      const [contador] = await pool.query(`SELECT COUNT(*) as total FROM vehiculos ${where}`, parametros);
+      const [vehiculos] = await pool.query(
+        `SELECT * FROM vehiculos ${where} ORDER BY id ASC LIMIT ? OFFSET ?`,
+        [...parametros, porPagina, offset]
+      );
       return res.json({ datos: vehiculos.map(procesarVehiculo), total: contador[0].total });
     }
 
-    const [vehiculos] = await pool.query('SELECT * FROM vehiculos ORDER BY id ASC');
+    const [vehiculos] = await pool.query(`SELECT * FROM vehiculos ${where} ORDER BY id ASC`, parametros);
 
     const listaProcesada = vehiculos.map(procesarVehiculo);
     res.json(listaProcesada);

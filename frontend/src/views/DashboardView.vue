@@ -10,16 +10,16 @@
         <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
 
         <div class="alertas-seccion">
-          <h3>⚠️ Alertas de Documentación Urgente</h3>
+          <h3>Alertas de Documentación Urgente</h3>
           <div v-if="cargando" class="skeleton-grid">
             <div class="skeleton-card" v-for="s in 4" :key="s"></div>
           </div>
           <div v-else-if="alertasDocumentos.length === 0" class="alerta-vacia">
-            ✅ Excelente: Todos los vehículos de la flota tienen sus documentos al día.
+            Excelente: Todos los vehículos de la flota estan al día.
           </div>
           <div v-else class="alertas-lista">
             <div v-for="alerta in alertasDocumentos" :key="alerta.id" :class="['alerta-tarjeta', alerta.gravedad]">
-              <strong>Camión Placa {{ alerta.placa }}</strong>: {{ alerta.mensaje }}
+              <strong>La volqueta de placa {{ alerta.placa }} presenta alerta</strong>: {{ alerta.mensaje }}
             </div>
           </div>
         </div>
