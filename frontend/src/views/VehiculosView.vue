@@ -167,14 +167,26 @@
                                 <option value="Mantenimiento">Mantenimiento</option>
                             </select>
                         </div>
-                        <div><label>Fecha SOAT:</label><input type="date" v-model="formulario.fecha_soat" required />
+                        <div class="fecha-input-wrapper">
+                            <label>Fecha SOAT:</label>
+                            <div class="fecha-display" @click="$refs.dateSoat?.showPicker()">
+                                {{ formulario.fecha_soat ? formatearFechaCorta(formulario.fecha_soat) : 'dd / mm / aaaa' }}
+                            </div>
+                            <input type="date" ref="dateSoat" v-model="formulario.fecha_soat" class="hidden-date" required />
                         </div>
-                        <div><label>Fecha Tecnomecánica:</label><input type="date"
-                                v-model="formulario.fecha_tecnomecanica" required />
+                        <div class="fecha-input-wrapper">
+                            <label>Fecha Tecnomecánica:</label>
+                            <div class="fecha-display" @click="$refs.dateTecno?.showPicker()">
+                                {{ formulario.fecha_tecnomecanica ? formatearFechaCorta(formulario.fecha_tecnomecanica) : 'dd / mm / aaaa' }}
+                            </div>
+                            <input type="date" ref="dateTecno" v-model="formulario.fecha_tecnomecanica" class="hidden-date" required />
                         </div>
-                        <div>
+                        <div class="fecha-input-wrapper">
                             <label>Último Cambio de Aceite:</label>
-                            <input type="date" v-model="formulario.fecha_ultimo_cambio_aceite" required />
+                            <div class="fecha-display" @click="$refs.dateAceite?.showPicker()">
+                                {{ formulario.fecha_ultimo_cambio_aceite ? formatearFechaCorta(formulario.fecha_ultimo_cambio_aceite) : 'dd / mm / aaaa' }}
+                            </div>
+                            <input type="date" ref="dateAceite" v-model="formulario.fecha_ultimo_cambio_aceite" class="hidden-date" required />
                         </div>
                     </div>
                     <div class="modal-actions">
@@ -332,6 +344,14 @@ const eliminarVehiculo = async (id) => {
 };
 
 const formatearFecha = (c) => new Date(c).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+const formatearFechaCorta = (fechaISO) => {
+    const [a, m, d] = fechaISO.split('-');
+    const mes = MESES[parseInt(m) - 1];
+    return `${parseInt(d)} de ${mes} de ${a}`;
+};
 
 const formatearCapacidad = (kg) => {
     if (!kg && kg !== 0) return '-';
