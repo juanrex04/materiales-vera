@@ -758,7 +758,33 @@ textarea:focus {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, var(--bg-body), #e2e8f0);
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  bottom: -40%;
+  left: -10%;
+  width: 120%;
+  height: 70%;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.login-container::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -10%;
+  width: 60%;
+  height: 60%;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .login-layout {
@@ -770,6 +796,12 @@ textarea:focus {
   width: 100%;
   max-width: 1000px;
   padding: 1.5rem;
+  animation: fadeInLogin 0.8s ease-out;
+}
+
+@keyframes fadeInLogin {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .login-brand {
@@ -778,23 +810,76 @@ textarea:focus {
   justify-content: flex-end;
 }
 
+.login-logo-wrap {
+  position: relative;
+  width: 340px;
+  height: 340px;
+}
+
+.login-logo-shape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  border-radius: 58% 42% 62% 38% / 54% 60% 40% 46%;
+  pointer-events: none;
+  animation: morphShape 8s ease-in-out infinite;
+}
+
+@keyframes morphShape {
+  0%   { border-radius: 58% 42% 62% 38% / 54% 60% 40% 46%; }
+  25%  { border-radius: 42% 58% 38% 62% / 60% 46% 54% 40%; }
+  50%  { border-radius: 62% 38% 58% 42% / 40% 54% 46% 60%; }
+  75%  { border-radius: 38% 62% 42% 58% / 46% 40% 60% 54%; }
+  100% { border-radius: 58% 42% 62% 38% / 54% 60% 40% 46%; }
+}
+
+.login-logo-glow {
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
 .login-box {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   padding: 2.5rem;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   width: 90%;
   max-width: 420px;
   text-align: center;
+  animation: fadeInLogin 0.8s ease-out 0.2s both;
 }
 
 .login-logo {
-  width: 340px;
-  height: 340px;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  display: block;
+  z-index: 1;
+}
+
+.login-footer {
+  position: absolute;
+  bottom: 1.5rem;
+  width: 100%;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  pointer-events: none;
 }
 
 .login-box button {
@@ -1540,9 +1625,9 @@ a.btn-nav {
     justify-content: center;
   }
 
-  .login-logo {
-    width: 200px;
-    height: 200px;
+  .login-logo-wrap {
+    width: 220px;
+    height: 220px;
   }
 
   /* Evita que el título y la hamburguesa se apilen verticalmente */
@@ -2065,14 +2150,19 @@ a.btn-nav {
     padding-top: 4vh;
   }
 
-  .login-logo {
-    width: 140px;
-    height: 140px;
+  .login-logo-wrap {
+    width: 160px;
+    height: 160px;
   }
 
   .login-box {
     padding: 1.5rem;
     width: 95%;
+  }
+
+  .login-footer {
+    font-size: 0.65rem;
+    bottom: 1rem;
   }
 
   /* Botones full-width para facilitar touch */

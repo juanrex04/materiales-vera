@@ -2,7 +2,11 @@
   <div class="login-container">
     <div class="login-layout">
       <div class="login-brand">
-        <img class="login-logo" src="/logo.png" alt="VERA S.A.S." />
+        <div class="login-logo-wrap">
+          <div class="login-logo-shape"></div>
+          <div class="login-logo-glow"></div>
+          <img class="login-logo" src="/logo.png" alt="VERA S.A.S." />
+        </div>
       </div>
       <div class="login-box">
       <h2>Materiales Vera</h2>
@@ -30,6 +34,7 @@
       </form>
       </div>
     </div>
+    <div class="login-footer">VERA S.A.S. &copy; {{ new Date().getFullYear() }}</div>
   </div>
 </template>
 

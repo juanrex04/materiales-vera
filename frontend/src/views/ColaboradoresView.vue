@@ -155,6 +155,7 @@ import PaginadorTabla from '@/components/PaginadorTabla.vue';
 import EstadoVacioTabla from '@/components/EstadoVacioTabla.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
 import { mostrarToast, confirmarAccion } from '@/utils/alertas';
+import { decodificarToken } from '@/auth';
 import BaseModal from '@/components/BaseModal.vue';
 
 const listaColaboradores = ref([]);
@@ -174,6 +175,8 @@ const filtros = ref({
 });
 
 const filtrosActivos = computed(() => Boolean(filtros.value.nombre.trim() || filtros.value.rol));
+
+const usuarioActual = decodificarToken();
 
 const sanitizarNombre = (valor) => {
     if (!valor) return '';
@@ -222,6 +225,7 @@ const obtenerColaboradores = async () => {
         const nombreLimpio = sanitizarNombre(filtros.value.nombre.trim());
         if (nombreLimpio) params.append('nombre', nombreLimpio);
         if (filtros.value.rol) params.append('rol', filtros.value.rol);
+        if (usuarioActual?.id) params.append('excluirId', usuarioActual.id);
 
         const respuesta = await peticion(`/api/admin/colaboradores?${params.toString()}`);
         const normalizada = Array.isArray(respuesta) ? respuesta : (respuesta?.datos || []);

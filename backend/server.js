@@ -189,7 +189,7 @@ app.post('/api/login',loginLimiter, [
 function construirFiltrosColaboradores(req) {
   const condiciones = [];
   const parametros = [];
-  const { nombre, rol } = req.query;
+  const { nombre, rol, excluirId } = req.query;
   const tNombre = (nombre || '').trim().replace(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ '.0-9-]/g, '');
   const tRol = (rol || '').trim();
 
@@ -200,6 +200,10 @@ function construirFiltrosColaboradores(req) {
   if (tRol === 'Admin' || tRol === 'Conductor') {
     condiciones.push('r.nombre = ?');
     parametros.push(tRol);
+  }
+  if (excluirId && /^\d+$/.test(excluirId)) {
+    condiciones.push('c.id != ?');
+    parametros.push(Number(excluirId));
   }
 
   const where = condiciones.length > 0 ? `WHERE ${condiciones.join(' AND ')}` : '';
