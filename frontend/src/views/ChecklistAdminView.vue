@@ -45,7 +45,7 @@
           </div>
 
           <div class="acciones-filtros">
-            <button @click="limpiarFiltros" class="btn-edit">
+            <button @click="limpiarFiltros" class="btn-secondary">
               Limpiar
             </button>
             <button @click="generarPDFSemanal" class="btn-primary" :disabled="generandoPDF">
@@ -73,14 +73,29 @@
                   <small class="text-muted">{{ chk.hora }}</small>
                 </td>
                 <td data-label="Conductor">{{ chk.conductor }}</td>
-                <td data-label="Vehículo">{{ chk.placa }} ({{ chk.marca }})</td>
+                <td data-label="Vehículo">
+                  <span class="placa-badge" style="margin-right: 6px;">{{ chk.placa }}</span>
+                  <small class="text-muted">({{ chk.marca }})</small>
+                </td>
                 <td data-label="Estado">
                   <span :class="chk.apto_para_trabajar ? 'badge-estado disponible' : 'badge-estado mantenimiento'">
+                    <span class="dot-indicador"></span>
                     {{ chk.apto_para_trabajar ? 'Apto' : 'Con Fallas' }}
                   </span>
                 </td>
                 <td data-label="Acciones">
-                  <button @click="abrirModalDetalles(chk)" class="btn-primary">Ver Reporte</button>
+                  <div class="acciones-tabla">
+                    <button @click="abrirModalDetalles(chk)" class="btn-action btn-primary" title="Ver reporte">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                      </svg>
+                      <span>Ver Reporte</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
               <EstadoVacioTabla

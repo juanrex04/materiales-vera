@@ -54,13 +54,40 @@
                             <tr v-for="c in listaColaboradores" :key="c.id">
                                 <td data-label="Nombre"><strong>{{ c.nombre }}</strong></td>
                                 <td data-label="Documento">{{ c.documento }}</td>
-                                <td data-label="Rol"><span :class="['badge-rol', c.rol.toLowerCase()]">{{ c.rol }}</span></td>
+                                <td data-label="Rol">
+                                    <span :class="['badge-rol', c.rol.toLowerCase()]">
+                                        <span class="dot-indicador"></span>
+                                        {{ c.rol }}
+                                    </span>
+                                </td>
                                 <td data-label="Licencia">{{ c.licencia_conducir || 'No Aplica' }}</td>
                                 <td data-label="Acciones">
                                     <div class="acciones-tabla">
-                                        <button @click="abrirModalEditar(c)" class="btn-edit">Editar</button>
-                                        <button @click="restablecerClave(c)" class="btn-reset">Clave</button>
-                                        <button @click="eliminarColaborador(c.id)" class="btn-delete">Eliminar</button>
+                                        <button @click="abrirModalEditar(c)" class="btn-action btn-edit" title="Editar colaborador">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                            </svg>
+                                            <span>Editar</span>
+                                        </button>
+                                        <button @click="restablecerClave(c)" class="btn-action btn-reset" title="Restablecer clave">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="7.5" cy="15.5" r="5.5"></circle>
+                                                <path d="m11.5 11.5 6-6"></path>
+                                                <path d="m15.5 5.5 2 2"></path>
+                                                <path d="m18 8 2 2"></path>
+                                            </svg>
+                                            <span>Clave</span>
+                                        </button>
+                                        <button @click="eliminarColaborador(c.id)" class="btn-action btn-delete" title="Desvincular colaborador">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                                            </svg>
+                                            <span>Eliminar</span>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -108,10 +135,10 @@
                             </div>
                         </div>
                         <div class="modal-actions">
-                            <button type="button" @click="cerrarModal" class="btn-secondary">Cancelar</button>
                             <button type="submit" class="btn-primary" :disabled="guardando">
                                 {{ guardando ? 'Guardando...' : 'Guardar' }}
                             </button>
+                            <button type="button" @click="cerrarModal" class="btn-secondary">Cancelar</button>
                         </div>
                     </form>
                 </div>

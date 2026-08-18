@@ -55,55 +55,84 @@
                         <tbody>
                             <SkeletonTabla v-if="cargando" :columnas="8" :filas="5" />
                             <tr v-for="v in listaVehiculos" :key="v.id">
-                                <td data-label="Placa"><strong>{{ v.placa }}</strong></td>
-                                <td data-label="Marca">{{ v.marca }}</td>
-                                <td data-label="Capacidad">{{ v.capacidad_carga_kg }} kg</td>
-                                <td data-label="Estado"><span :class="['badge-estado', v.estado.toLowerCase().replace(' ', '-')]">{{
-                                    v.estado }}</span></td>
-                                <td data-label="SOAT"
-                                    :class="{ 'celda-roja': v.soat_estado === 'VENCIDO', 'celda-amarilla': v.soat_estado === 'PROXIMO' }">
-                                    <strong>{{ formatearFecha(v.fecha_soat) }}</strong>
-                                    <div class="dias-texto">
-                                        <span v-if="v.soat_estado === 'VENCIDO'">Vencido hace {{
-                                            Math.abs(v.soat_dias_restantes) }} días</span>
-                                        <span v-else-if="v.soat_estado === 'PROXIMO'">Faltan {{ v.soat_dias_restantes
-                                        }} días</span>
-                                        <span v-else>Al día ({{ v.soat_dias_restantes }} días)</span>
+                                <td data-label="Placa">
+                                    <span class="placa-badge">{{ v.placa }}</span>
+                                </td>
+                                <td data-label="Marca">
+                                    <strong>{{ v.marca }}</strong>
+                                </td>
+                                <td data-label="Capacidad">{{ formatearCapacidad(v.capacidad_carga_kg) }}</td>
+                                <td data-label="Estado operativo">
+                                    <span :class="['badge-estado', v.estado.toLowerCase().replace(' ', '-')]">
+                                        <span class="dot-indicador"></span>
+                                        {{ v.estado }}
+                                    </span>
+                                </td>
+                                <td data-label="SOAT">
+                                    <div class="doc-celda">
+                                        <span class="doc-fecha">{{ formatearFecha(v.fecha_soat) }}</span>
+                                        <span v-if="v.soat_estado === 'VENCIDO'" class="doc-chip vencido">
+                                            Vencido ({{ Math.abs(v.soat_dias_restantes) }}d)
+                                        </span>
+                                        <span v-else-if="v.soat_estado === 'PROXIMO'" class="doc-chip proximo">
+                                            Faltan {{ v.soat_dias_restantes }}d
+                                        </span>
+                                        <span v-else class="doc-chip ok">
+                                            Al día ({{ v.soat_dias_restantes }}d)
+                                        </span>
                                     </div>
                                 </td>
 
-                                <td data-label="Tecnomecánica"
-                                    :class="{ 'celda-roja': v.tecno_estado === 'VENCIDO', 'celda-amarilla': v.tecno_estado === 'PROXIMO' }">
-                                    <strong>{{ formatearFecha(v.fecha_tecnomecanica) }}</strong>
-                                    <div class="dias-texto">
-                                        <span v-if="v.tecno_estado === 'VENCIDO'">Vencido hace {{
-                                            Math.abs(v.tecno_dias_restantes) }} días</span>
-                                        <span v-else-if="v.tecno_estado === 'PROXIMO'">Faltan {{
-                                            v.tecno_dias_restantes }} días</span>
-                                        <span v-else>Al día ({{ v.tecno_dias_restantes }} días)</span>
+                                <td data-label="Tecnomecánica">
+                                    <div class="doc-celda">
+                                        <span class="doc-fecha">{{ formatearFecha(v.fecha_tecnomecanica) }}</span>
+                                        <span v-if="v.tecno_estado === 'VENCIDO'" class="doc-chip vencido">
+                                           Vencido ({{ Math.abs(v.tecno_dias_restantes) }}d)
+                                        </span>
+                                        <span v-else-if="v.tecno_estado === 'PROXIMO'" class="doc-chip proximo">
+                                           Faltan {{ v.tecno_dias_restantes }}d
+                                        </span>
+                                        <span v-else class="doc-chip ok">
+                                           Al día ({{ v.tecno_dias_restantes }}d)
+                                        </span>
                                     </div>
                                 </td>
 
-                                <td data-label="Cambio Aceite"
-                                    :class="{ 'celda-roja': v.aceite_estado === 'VENCIDO', 'celda-amarilla': v.aceite_estado === 'PROXIMO' }">
-                                    <template v-if="v.fecha_ultimo_cambio_aceite">
-                                        <strong>{{ formatearFecha(v.fecha_ultimo_cambio_aceite) }}</strong>
-                                        <div class="dias-texto">
-                                            <span v-if="v.aceite_estado === 'VENCIDO'">Vencido hace {{
-                                                Math.abs(v.aceite_dias_restantes) }} días</span>
-                                            <span v-else-if="v.aceite_estado === 'PROXIMO'">Faltan {{
-                                                v.aceite_dias_restantes }} días</span>
-                                            <span v-else>Al día ({{ v.aceite_dias_restantes }} días)</span>
-                                        </div>
-                                    </template>
-                                    <template v-else>
-                                        <span class="badge-sin-dato">Sin registro</span>
-                                    </template>
+                                <td data-label="Cambio Aceite">
+                                    <div v-if="v.fecha_ultimo_cambio_aceite" class="doc-celda">
+                                        <span class="doc-fecha">{{ formatearFecha(v.fecha_ultimo_cambio_aceite) }}</span>
+                                        <span v-if="v.aceite_estado === 'VENCIDO'" class="doc-chip vencido">
+                                           Vencido ({{ Math.abs(v.aceite_dias_restantes) }}d)
+                                        </span>
+                                        <span v-else-if="v.aceite_estado === 'PROXIMO'" class="doc-chip proximo">
+                                           Faltan {{ v.aceite_dias_restantes }}d
+                                        </span>
+                                        <span v-else class="doc-chip ok">
+                                           Al día ({{ v.aceite_dias_restantes }}d)
+                                        </span>
+                                    </div>
+                                    <div v-else class="doc-celda">
+                                        <span class="doc-chip sin-dato">Sin registro</span>
+                                    </div>
                                 </td>
                                 <td data-label="Acciones">
                                     <div class="acciones-tabla">
-                                        <button @click="abrirModalEditar(v)" class="btn-edit">Editar</button>
-                                        <button @click="eliminarVehiculo(v.id)" class="btn-delete">Eliminar</button>
+                                        <button @click="abrirModalEditar(v)" class="btn-action btn-edit" title="Editar vehículo">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                            </svg>
+                                            <span>Editar</span>
+                                        </button>
+                                        <button @click="eliminarVehiculo(v.id)" class="btn-action btn-delete" title="Eliminar vehículo">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                                            </svg>
+                                            <span>Eliminar</span>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -153,10 +182,10 @@
                             </div>
                         </div>
                         <div class="modal-actions">
-                            <button type="button" @click="cerrarModal" class="btn-secondary">Cancelar</button>
                             <button type="submit" class="btn-primary" :disabled="guardando">
                                 {{ guardando ? 'Guardando...' : 'Guardar' }}
                             </button>
+                            <button type="button" @click="cerrarModal" class="btn-secondary">Cancelar</button>
                         </div>
                     </form>
                 </div>
@@ -302,9 +331,15 @@ const eliminarVehiculo = async (id) => {
     } catch (error) {
         errorMensaje.value = error.message;
         mostrarToast('error', 'No se pudo eliminar el vehículo', error.message);
+    } finally {
+        detenerCarga();
     }
-    finally { detenerCarga(); }
 };
 
 const formatearFecha = (c) => new Date(c).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+
+const formatearCapacidad = (kg) => {
+    if (!kg && kg !== 0) return '-';
+    return `${new Intl.NumberFormat('es-CO').format(kg)} kg`;
+};
 </script>
