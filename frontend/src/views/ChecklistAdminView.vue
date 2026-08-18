@@ -27,14 +27,20 @@
             </select>
           </div>
 
-          <div class="form-group filtro-item">
+          <div class="fecha-input-wrapper filtro-item">
             <label>Fecha Desde:</label>
-            <input type="date" v-model="filtros.fechaInicio" class="input-busqueda" />
+            <div class="fecha-display" @click="$refs.dateInicio?.showPicker()">
+              {{ filtros.fechaInicio ? formatearFechaCorta(filtros.fechaInicio) : 'dd / mm / aaaa' }}
+            </div>
+            <input type="date" ref="dateInicio" v-model="filtros.fechaInicio" class="hidden-date" />
           </div>
 
-          <div class="form-group filtro-item">
+          <div class="fecha-input-wrapper filtro-item">
             <label>Fecha Hasta:</label>
-            <input type="date" v-model="filtros.fechaFin" class="input-busqueda" />
+            <div class="fecha-display" @click="$refs.dateFin?.showPicker()">
+              {{ filtros.fechaFin ? formatearFechaCorta(filtros.fechaFin) : 'dd / mm / aaaa' }}
+            </div>
+            <input type="date" ref="dateFin" v-model="filtros.fechaFin" class="hidden-date" />
           </div>
 
           <div class="form-group filtro-item">
@@ -499,6 +505,12 @@ import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
 import BaseModal from '@/components/BaseModal.vue';
+
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
 const listaChecklists = ref([]);
 const listaVehiculos = ref([]);
 const cargando = ref(false);
@@ -536,19 +548,19 @@ const formatearFecha = (fecha) => {
   //Valido que tenga las 3 partes (Año, Mes, Día)
   if (partes.length !== 3) return fechaTexto;
 
-  const meses = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
-
   const dia = partes[2];
-  const mes = meses[parseInt(partes[1]) - 1];
+  const mes = MESES[parseInt(partes[1]) - 1];
   const anio = partes[0];
 
   // Si por alguna razón el mes es inválido, mostramos la fecha original para que no se rompa
   if (!mes) return fechaTexto;
 
   return `${dia} de ${mes} de ${anio}`;
+};
+
+const formatearFechaCorta = (fechaISO) => {
+  const [a, m, d] = fechaISO.split('-');
+  return `${parseInt(d)} de ${MESES[parseInt(m) - 1].toLowerCase()} de ${a}`;
 };
 
 // LÓGICA DE FILTRADO (SERVER-SIDE: los filtros viajan al backend en cargarChecklists)

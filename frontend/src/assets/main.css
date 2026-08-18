@@ -1242,6 +1242,40 @@ textarea:focus {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
+.fecha-input-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fecha-display {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: white;
+  color: #1e293b;
+  cursor: pointer;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+}
+
+.fecha-display:hover {
+  border-color: var(--primary-blue);
+}
+
+.hidden-date {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
 .btn-limpiar-container {
   flex: 0;
   white-space: nowrap;
