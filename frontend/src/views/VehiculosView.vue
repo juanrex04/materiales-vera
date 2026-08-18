@@ -12,14 +12,8 @@
                 <div class="filtros-container">
                     <div class="form-group filtro-item">
                         <label>Buscar por Placa:</label>
-                        <input
-                            type="text"
-                            :value="filtros.placa"
-                            @input="onPlacaInput"
-                            placeholder="Ej: ABC-123"
-                            maxlength="10"
-                            class="input-busqueda"
-                        />
+                        <input type="text" :value="filtros.placa" @input="onPlacaInput" placeholder="Ej: ABC-123"
+                            maxlength="10" class="input-busqueda" />
                     </div>
 
                     <div class="form-group filtro-item">
@@ -87,28 +81,29 @@
                                     <div class="doc-celda">
                                         <span class="doc-fecha">{{ formatearFecha(v.fecha_tecnomecanica) }}</span>
                                         <span v-if="v.tecno_estado === 'VENCIDO'" class="doc-chip vencido">
-                                           Vencido ({{ Math.abs(v.tecno_dias_restantes) }}d)
+                                            Vencido ({{ Math.abs(v.tecno_dias_restantes) }}d)
                                         </span>
                                         <span v-else-if="v.tecno_estado === 'PROXIMO'" class="doc-chip proximo">
-                                           Faltan {{ v.tecno_dias_restantes }}d
+                                            Faltan {{ v.tecno_dias_restantes }}d
                                         </span>
                                         <span v-else class="doc-chip ok">
-                                           Al día ({{ v.tecno_dias_restantes }}d)
+                                            Al día ({{ v.tecno_dias_restantes }}d)
                                         </span>
                                     </div>
                                 </td>
 
                                 <td data-label="Cambio Aceite">
                                     <div v-if="v.fecha_ultimo_cambio_aceite" class="doc-celda">
-                                        <span class="doc-fecha">{{ formatearFecha(v.fecha_ultimo_cambio_aceite) }}</span>
+                                        <span class="doc-fecha">{{ formatearFecha(v.fecha_ultimo_cambio_aceite)
+                                            }}</span>
                                         <span v-if="v.aceite_estado === 'VENCIDO'" class="doc-chip vencido">
-                                           Vencido ({{ Math.abs(v.aceite_dias_restantes) }}d)
+                                            Vencido ({{ Math.abs(v.aceite_dias_restantes) }}d)
                                         </span>
                                         <span v-else-if="v.aceite_estado === 'PROXIMO'" class="doc-chip proximo">
-                                           Faltan {{ v.aceite_dias_restantes }}d
+                                            Faltan {{ v.aceite_dias_restantes }}d
                                         </span>
                                         <span v-else class="doc-chip ok">
-                                           Al día ({{ v.aceite_dias_restantes }}d)
+                                            Al día ({{ v.aceite_dias_restantes }}d)
                                         </span>
                                     </div>
                                     <div v-else class="doc-celda">
@@ -117,17 +112,27 @@
                                 </td>
                                 <td data-label="Acciones">
                                     <div class="acciones-tabla">
-                                        <button @click="abrirModalEditar(v)" class="btn-action btn-edit" title="Editar vehículo">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        <button @click="abrirModalEditar(v)" class="btn-action btn-edit"
+                                            title="Editar vehículo">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7">
+                                                </path>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z">
+                                                </path>
                                             </svg>
                                             <span>Editar</span>
                                         </button>
-                                        <button @click="eliminarVehiculo(v.id)" class="btn-action btn-delete" title="Eliminar vehículo">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <button @click="eliminarVehiculo(v.id)" class="btn-action btn-delete"
+                                            title="Eliminar vehículo">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
                                                 <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                <path
+                                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                                </path>
                                                 <line x1="10" y1="11" x2="10" y2="17"></line>
                                                 <line x1="14" y1="11" x2="14" y2="17"></line>
                                             </svg>
@@ -136,60 +141,49 @@
                                     </div>
                                 </td>
                             </tr>
-                            <EstadoVacioTabla
-                                v-if="!cargando && listaVehiculos.length === 0"
-                                :columnas="8"
-                                :mensaje="errorMensaje ? 'No se pudieron cargar los vehículos.' : (filtrosActivos ? 'No se encontraron vehículos con los filtros aplicados.' : 'No hay vehículos registrados en el sistema.')"
-                            />
+                            <EstadoVacioTabla v-if="!cargando && listaVehiculos.length === 0" :columnas="8"
+                                :mensaje="errorMensaje ? 'No se pudieron cargar los vehículos.' : (filtrosActivos ? 'No se encontraron vehículos con los filtros aplicados.' : 'No hay vehículos registrados en el sistema.')" />
                         </tbody>
                     </table>
 
-                    <PaginadorTabla
-                        v-model:pagina="pagina"
-                        v-model:porPagina="porPagina"
-                        :total="totalVehiculos"
-                        :cargando="cargando"
-                    />
+                    <PaginadorTabla v-model:pagina="pagina" v-model:porPagina="porPagina" :total="totalVehiculos"
+                        :cargando="cargando" />
                 </div>
             </div>
 
-            <div v-if="mostrarModal" class="modal-overlay">
-                <div class="modal-content">
-                    <h3>{{ modoEdicion ? 'Modificar Datos del Vehículo' : 'Registrar Nuevo Vehículo' }}</h3>
-                    <form @submit.prevent="guardarVehiculo">
-                        <div class="form-grid">
-                            <div><label>Placa:</label><input v-model="formulario.placa" required
-                                    placeholder="ABC-123" /></div>
-                            <div><label>Marca:</label><input v-model="formulario.marca" required /></div>
-                            <div><label>Capacidad (kg):</label><input type="number"
-                                    v-model="formulario.capacidad_carga_kg" required /></div>
-                            <div>
-                                <label>Estado:</label>
-                                <select v-model="formulario.estado" required>
-                                    <option value="Disponible">Disponible</option>
-                                    <option value="Mantenimiento">Mantenimiento</option>
-                                </select>
-                            </div>
-                            <div><label>Fecha SOAT:</label><input type="date" v-model="formulario.fecha_soat"
-                                    required />
-                            </div>
-                            <div><label>Fecha Tecnomecánica:</label><input type="date"
-                                    v-model="formulario.fecha_tecnomecanica" required />
-                            </div>
-                            <div>
-                                <label>Último Cambio de Aceite:</label>
-                                <input type="date" v-model="formulario.fecha_ultimo_cambio_aceite" required />
-                            </div>
+            <BaseModal v-model="mostrarModal"
+                :title="modoEdicion ? 'Modificar Datos del Vehículo' : 'Registrar Nuevo Vehículo'">
+                <form @submit.prevent="guardarVehiculo">
+                    <div class="form-grid">
+                        <div><label>Placa:</label><input v-model="formulario.placa" required placeholder="ABC-123" />
                         </div>
-                        <div class="modal-actions">
-                            <button type="submit" class="btn-primary" :disabled="guardando">
-                                {{ guardando ? 'Guardando...' : 'Guardar' }}
-                            </button>
-                            <button type="button" @click="cerrarModal" class="btn-secondary">Cancelar</button>
+                        <div><label>Marca:</label><input v-model="formulario.marca" required /></div>
+                        <div><label>Capacidad (kg):</label><input type="number" v-model="formulario.capacidad_carga_kg"
+                                required /></div>
+                        <div>
+                            <label>Estado:</label>
+                            <select v-model="formulario.estado" required>
+                                <option value="Disponible">Disponible</option>
+                                <option value="Mantenimiento">Mantenimiento</option>
+                            </select>
                         </div>
-                    </form>
-                </div>
-            </div>
+                        <div><label>Fecha SOAT:</label><input type="date" v-model="formulario.fecha_soat" required />
+                        </div>
+                        <div><label>Fecha Tecnomecánica:</label><input type="date"
+                                v-model="formulario.fecha_tecnomecanica" required />
+                        </div>
+                        <div>
+                            <label>Último Cambio de Aceite:</label>
+                            <input type="date" v-model="formulario.fecha_ultimo_cambio_aceite" required />
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-primary" :disabled="guardando">
+                            {{ guardando ? 'Guardando...' : 'Guardar' }}
+                        </button>
+                    </div>
+                </form>
+            </BaseModal>
         </main>
     </div>
 </template>
@@ -203,6 +197,7 @@ import PaginadorTabla from '@/components/PaginadorTabla.vue';
 import EstadoVacioTabla from '@/components/EstadoVacioTabla.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
 import { mostrarToast, confirmarAccion } from '@/utils/alertas';
+import BaseModal from '@/components/BaseModal.vue';
 
 const listaVehiculos = ref([]);
 const cargando = ref(false);
@@ -213,7 +208,7 @@ const modoEdicion = ref(false);
 const pagina = ref(1);
 const porPagina = ref(10);
 const totalVehiculos = ref(0);
-const formulario = ref({ id: null, placa: '', marca: '', capacidad_carga_kg: '', estado: 'Disponible', fecha_soat: '', fecha_tecnomecanica: '', fecha_ultimo_cambio_aceite: ''});
+const formulario = ref({ id: null, placa: '', marca: '', capacidad_carga_kg: '', estado: 'Disponible', fecha_soat: '', fecha_tecnomecanica: '', fecha_ultimo_cambio_aceite: '' });
 
 const filtros = ref({
     placa: '',
@@ -292,7 +287,7 @@ const abrirModalNuevo = () => {
 
 const abrirModalEditar = (v) => {
     modoEdicion.value = true;
-    formulario.value = { ...v, fecha_soat: v.fecha_soat.split('T')[0], fecha_tecnomecanica: v.fecha_tecnomecanica.split('T')[0], fecha_ultimo_cambio_aceite: v.fecha_ultimo_cambio_aceite ? v.fecha_ultimo_cambio_aceite.split('T')[0] : ''};
+    formulario.value = { ...v, fecha_soat: v.fecha_soat.split('T')[0], fecha_tecnomecanica: v.fecha_tecnomecanica.split('T')[0], fecha_ultimo_cambio_aceite: v.fecha_ultimo_cambio_aceite ? v.fecha_ultimo_cambio_aceite.split('T')[0] : '' };
     mostrarModal.value = true;
 };
 

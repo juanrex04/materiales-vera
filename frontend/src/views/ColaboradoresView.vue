@@ -12,14 +12,8 @@
                 <div class="filtros-container">
                     <div class="form-group filtro-item">
                         <label>Buscar por Nombre:</label>
-                        <input
-                            type="text"
-                            :value="filtros.nombre"
-                            @input="onNombreInput"
-                            placeholder="Ej: Carlos, Juan..."
-                            maxlength="100"
-                            class="input-busqueda"
-                        />
+                        <input type="text" :value="filtros.nombre" @input="onNombreInput"
+                            placeholder="Ej: Carlos, Juan..." maxlength="100" class="input-busqueda" />
                     </div>
 
                     <div class="form-group filtro-item">
@@ -63,15 +57,23 @@
                                 <td data-label="Licencia">{{ c.licencia_conducir || 'No Aplica' }}</td>
                                 <td data-label="Acciones">
                                     <div class="acciones-tabla">
-                                        <button @click="abrirModalEditar(c)" class="btn-action btn-edit" title="Editar colaborador">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        <button @click="abrirModalEditar(c)" class="btn-action btn-edit"
+                                            title="Editar colaborador">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7">
+                                                </path>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z">
+                                                </path>
                                             </svg>
                                             <span>Editar</span>
                                         </button>
-                                        <button @click="restablecerClave(c)" class="btn-action btn-reset" title="Restablecer clave">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <button @click="restablecerClave(c)" class="btn-action btn-reset"
+                                            title="Restablecer clave">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
                                                 <circle cx="7.5" cy="15.5" r="5.5"></circle>
                                                 <path d="m11.5 11.5 6-6"></path>
                                                 <path d="m15.5 5.5 2 2"></path>
@@ -79,10 +81,15 @@
                                             </svg>
                                             <span>Clave</span>
                                         </button>
-                                        <button @click="eliminarColaborador(c.id)" class="btn-action btn-delete" title="Desvincular colaborador">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <button @click="eliminarColaborador(c.id)" class="btn-action btn-delete"
+                                            title="Desvincular colaborador">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
                                                 <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                <path
+                                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                                </path>
                                                 <line x1="10" y1="11" x2="10" y2="17"></line>
                                                 <line x1="14" y1="11" x2="14" y2="17"></line>
                                             </svg>
@@ -91,58 +98,50 @@
                                     </div>
                                 </td>
                             </tr>
-                            <EstadoVacioTabla
-                                v-if="!cargando && listaColaboradores.length === 0"
-                                :columnas="5"
-                                :mensaje="errorMensaje ? 'No se pudieron cargar los colaboradores.' : (filtrosActivos ? 'No se encontraron colaboradores con los filtros aplicados.' : 'No hay colaboradores registrados en el sistema.')"
-                            />
+                            <EstadoVacioTabla v-if="!cargando && listaColaboradores.length === 0" :columnas="5"
+                                :mensaje="errorMensaje ? 'No se pudieron cargar los colaboradores.' : (filtrosActivos ? 'No se encontraron colaboradores con los filtros aplicados.' : 'No hay colaboradores registrados en el sistema.')" />
                         </tbody>
                     </table>
 
-                    <PaginadorTabla
-                        v-model:pagina="pagina"
-                        v-model:porPagina="porPagina"
-                        :total="totalColaboradores"
-                        :cargando="cargando"
-                    />
+                    <PaginadorTabla v-model:pagina="pagina" v-model:porPagina="porPagina" :total="totalColaboradores"
+                        :cargando="cargando" />
                 </div>
             </div>
 
-            <div v-if="mostrarModal" class="modal-overlay">
-                <div class="modal-content">
-                    <h3>{{ modoEdicion ? 'Editar Colaborador' : 'Registrar Nuevo Colaborador' }}</h3>
-                    <form @submit.prevent="guardarColaborador">
-                        <div class="form-vertical">
-                            <div><label>Nombre Completo:</label><input v-model="formulario.nombre" required /></div>
-                            <div><label>Documento:</label><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="20" v-model="formulario.documento" placeholder="Ej: 1234567890" required /></div>
-
-                            <div v-if="!modoEdicion" class="aviso-password">
-                                <p>La contraseña inicial será: <strong>12345</strong></p>
-                                <p>El colaborador deberá cambiarla al iniciar sesión por primera vez.</p>
-                            </div>
-
-                            <div>
-                                <label>Rol asignado:</label>
-                                <select v-model="formulario.rol_id" required>
-                                    <option :value="1">Admin</option>
-                                    <option :value="2">Conductor</option>
-                                </select>
-                            </div>
-
-                            <div v-if="formulario.rol_id === 2">
-                                <label>Número de Licencia:</label>
-                                <input v-model="formulario.licencia_conducir" placeholder="Ej: C2-12345" required />
-                            </div>
+            <BaseModal v-model="mostrarModal"
+                :title="modoEdicion ? 'Editar Colaborador' : 'Registrar Nuevo Colaborador'">
+                <form @submit.prevent="guardarColaborador">
+                    <div class="form-vertical">
+                        <div><label>Nombre Completo:</label><input v-model="formulario.nombre" required /></div>
+                        <div><label>Documento:</label><input type="text" inputmode="numeric" pattern="[0-9]*"
+                                maxlength="20" v-model="formulario.documento" placeholder="Ej: 1234567890" required />
                         </div>
-                        <div class="modal-actions">
-                            <button type="submit" class="btn-primary" :disabled="guardando">
-                                {{ guardando ? 'Guardando...' : 'Guardar' }}
-                            </button>
-                            <button type="button" @click="cerrarModal" class="btn-secondary">Cancelar</button>
+
+                        <div v-if="!modoEdicion" class="aviso-password">
+                            <p>La contraseña inicial será: <strong>12345</strong></p>
+                            <p>El colaborador deberá cambiarla al iniciar sesión por primera vez.</p>
                         </div>
-                    </form>
-                </div>
-            </div>
+
+                        <div>
+                            <label>Rol asignado:</label>
+                            <select v-model="formulario.rol_id" required>
+                                <option :value="1">Admin</option>
+                                <option :value="2">Conductor</option>
+                            </select>
+                        </div>
+
+                        <div v-if="formulario.rol_id === 2">
+                            <label>Número de Licencia:</label>
+                            <input v-model="formulario.licencia_conducir" placeholder="Ej: C2-12345" required />
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-primary" :disabled="guardando">
+                            {{ guardando ? 'Guardando...' : 'Guardar' }}
+                        </button>
+                    </div>
+                </form>
+            </BaseModal>
         </main>
     </div>
 </template>
@@ -156,6 +155,7 @@ import PaginadorTabla from '@/components/PaginadorTabla.vue';
 import EstadoVacioTabla from '@/components/EstadoVacioTabla.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
 import { mostrarToast, confirmarAccion } from '@/utils/alertas';
+import BaseModal from '@/components/BaseModal.vue';
 
 const listaColaboradores = ref([]);
 const cargando = ref(false);

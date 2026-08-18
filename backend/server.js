@@ -585,8 +585,8 @@ function construirFiltrosChecklists(req) {
   }
   if (tTexto) {
     const termino = `%${tTexto}%`;
-    condiciones.push('(col.nombre LIKE ? OR v.placa LIKE ?)');
-    parametros.push(termino, termino);
+    condiciones.push('(col.nombre LIKE ?)');
+    parametros.push(termino);
   }
   if (tFechaInicio) {
     condiciones.push('c.fecha >= ?');

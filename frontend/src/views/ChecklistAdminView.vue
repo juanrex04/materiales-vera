@@ -2,7 +2,9 @@
   <div class="dashboard-container">
     <div class="content">
       <div class="bienvenida-card">
-        <p><strong>Importante: </strong>Para generar el reporte semanal en formato PDF, seleccione la <strong>placa del vehículo</strong> y complete el <strong>rango de fechas</strong> que desee consultar. Sin estos tres campos el sistema no generará el PDF.</p>
+        <p><strong>Importante: </strong>Para generar el reporte semanal en formato PDF, seleccione la <strong>placa del
+            vehículo</strong> y complete el <strong>rango de fechas</strong> que desee consultar. Sin estos tres campos
+          el sistema no generará el PDF.</p>
       </div>
       <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
       <div class="gestion-seccion">
@@ -13,8 +15,16 @@
 
         <div class="filtros-container">
           <div class="form-group filtro-item">
-            <label>Buscar (Conductor o Placa):</label>
-            <input type="text" v-model="filtros.texto" placeholder="Ej: Juan, ABC-123..." class="input-busqueda" />
+            <label>Buscar inspección por conductor:</label>
+            <input type="text" v-model="filtros.texto" placeholder="Ej: Juan, Carlos..." class="input-busqueda" />
+          </div>
+          
+          <div class="form-group filtro-item">
+            <label>Placa:</label>
+            <select v-model="filtros.placa" class="input-busqueda">
+              <option value="">Seleccione la placa...</option>
+              <option v-for="v in listaVehiculos" :key="v.id" :value="v.placa">{{ v.placa }} ({{ v.marca }})</option>
+            </select>
           </div>
 
           <div class="form-group filtro-item">
@@ -25,14 +35,6 @@
           <div class="form-group filtro-item">
             <label>Fecha Hasta:</label>
             <input type="date" v-model="filtros.fechaFin" class="input-busqueda" />
-          </div>
-
-          <div class="form-group filtro-item">
-            <label>Placa:</label>
-            <select v-model="filtros.placa" class="input-busqueda">
-              <option value="">Seleccione la placa...</option>
-              <option v-for="v in listaVehiculos" :key="v.id" :value="v.placa">{{ v.placa }} ({{ v.marca }})</option>
-            </select>
           </div>
 
           <div class="form-group filtro-item">
@@ -48,8 +50,10 @@
             <button @click="limpiarFiltros" class="btn-edit">
               Limpiar filtros
             </button>
-            <button @click="generarPDFSemanal" class="btn-primary" :disabled="generandoPDF" title="Generar reporte semanal por volqueta">
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button @click="generarPDFSemanal" class="btn-primary" :disabled="generandoPDF"
+              title="Generar reporte semanal por volqueta">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
                 <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -91,8 +95,10 @@
                 </td>
                 <td data-label="Acciones">
                   <div class="acciones-tabla">
-                    <button @click="abrirModalDetalles(chk)" class="btn-action btn-primary" title="Ver reporte individual">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <button @click="abrirModalDetalles(chk)" class="btn-action btn-primary"
+                      title="Ver reporte individual">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
                         <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -104,177 +110,165 @@
                   </div>
                 </td>
               </tr>
-              <EstadoVacioTabla
-                v-if="!cargando && listaChecklists.length === 0"
-                :columnas="5"
-                :mensaje="errorMensaje ? 'No se pudieron cargar las inspecciones.' : 'No se encontraron inspecciones en ese rango de fechas.'"
-              />
+              <EstadoVacioTabla v-if="!cargando && listaChecklists.length === 0" :columnas="5"
+                :mensaje="errorMensaje ? 'No se pudieron cargar las inspecciones.' : 'No se encontraron inspecciones en ese rango de fechas.'" />
             </tbody>
           </table>
 
-          <PaginadorTabla
-            v-model:pagina="pagina"
-            v-model:porPagina="porPagina"
-            :total="totalChecklists"
-            :cargando="cargando"
-          />
+          <PaginadorTabla v-model:pagina="pagina" v-model:porPagina="porPagina" :total="totalChecklists"
+            :cargando="cargando" />
         </div>
 
-        <div v-if="modalVisible" class="modal-overlay" @click.self="cerrarModal">
-          <div class="modal-content modal-largo">
-            <div class="modal-header">
-              <h3>Reporte de Inspección Preoperacional</h3>
-              <button @click="cerrarModal" class="btn-close">✖</button>
+        <BaseModal v-model="modalVisible" title="Reporte de Inspección Preoperacional" size="large"
+          :close-on-overlay="true">
+          <div class="modal-body scroll-area" id="contenido-pdf">
+            <div class="info-resumen">
+              <p><strong>Conductor:</strong> {{ checklistSeleccionado.conductor }}</p>
+              <p><strong>Vehículo:</strong> {{ checklistSeleccionado.placa }} ({{ checklistSeleccionado.marca }})
+              </p>
+              <p><strong>Fecha de Revisión:</strong> {{ formatearFecha(checklistSeleccionado.fecha_formateada) }} a
+                las {{
+                  checklistSeleccionado.hora }}</p>
+              <p><strong>Resultado:</strong>
+                <span
+                  :style="{ color: checklistSeleccionado.apto_para_trabajar ? '#16a34a' : '#dc2626', fontWeight: 'bold' }">
+                  {{ checklistSeleccionado.apto_para_trabajar ? 'VEHÍCULO APTO' : 'NO APTO / REQUIERE REVISIÓN' }}
+                </span>
+              </p>
             </div>
 
-            <div class="modal-body scroll-area" id="contenido-pdf">
-              <div class="info-resumen">
-                <p><strong>Conductor:</strong> {{ checklistSeleccionado.conductor }}</p>
-                <p><strong>Vehículo:</strong> {{ checklistSeleccionado.placa }} ({{ checklistSeleccionado.marca }})
-                </p>
-                <p><strong>Fecha de Revisión:</strong> {{ formatearFecha(checklistSeleccionado.fecha_formateada) }} a
-                  las {{
-                    checklistSeleccionado.hora }}</p>
-                <p><strong>Resultado:</strong>
-                  <span
-                    :style="{ color: checklistSeleccionado.apto_para_trabajar ? '#16a34a' : '#dc2626', fontWeight: 'bold' }">
-                    {{ checklistSeleccionado.apto_para_trabajar ? 'VEHÍCULO APTO' : 'NO APTO / REQUIERE REVISIÓN' }}
-                  </span>
-                </p>
-              </div>
-
-              <div class="observaciones-caja">
-                <label><strong>Novedades y Observaciones del Conductor:</strong></label>
-                <p>{{ checklistSeleccionado.observaciones || 'Ninguna observación registrada.' }}</p>
-              </div>
-
-              <div class="grid-categorias">
-
-                <div class="categoria-tarjeta">
-                  <h4>Luces y Seguridad</h4>
-                  <ul>
-                    <li :class="{ 'falla': !checklistSeleccionado.luces_frontales }"><span>Frontales:</span> {{
-                      icon(checklistSeleccionado.luces_frontales) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.luces_traseras }"><span>Traseras:</span> {{
-                      icon(checklistSeleccionado.luces_traseras) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.direccionales_delanteras }"><span>Dir. Del:</span> {{
-                      icon(checklistSeleccionado.direccionales_delanteras) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.direccionales_traseras }"><span>Dir. Tras:</span> {{
-                      icon(checklistSeleccionado.direccionales_traseras) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.espejos_laterales }"><span>Espejos:</span> {{
-                      icon(checklistSeleccionado.espejos_laterales) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.alarma_retroceso }"><span>Alarma retro:</span> {{
-                      icon(checklistSeleccionado.alarma_retroceso) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.pito }"><span>Pito:</span> {{
-                      icon(checklistSeleccionado.pito) }}</li>
-                  </ul>
-                </div>
-
-                <div class="categoria-tarjeta">
-                  <h4>Cabina y Frenos</h4>
-                  <ul>
-                    <li :class="{ 'falla': !checklistSeleccionado.freno_servicio }"><span>Freno serv:</span> {{
-                      icon(checklistSeleccionado.freno_servicio) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.freno_emergencia }"><span>Freno emer:</span> {{
-                      icon(checklistSeleccionado.freno_emergencia) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.direccion_suspension }"><span>Dir/Susp:</span> {{
-                      icon(checklistSeleccionado.direccion_suspension) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.cinturon_seguridad }"><span>Cinturón:</span> {{
-                      icon(checklistSeleccionado.cinturon_seguridad) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.vidrio_frontal }"><span>Vidrio:</span> {{
-                      icon(checklistSeleccionado.vidrio_frontal) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.limpia_brisas }"><span>Limpia brisas:</span> {{
-                      icon(checklistSeleccionado.limpia_brisas) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.silleteria }"><span>Silletería:</span> {{
-                      icon(checklistSeleccionado.silleteria) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.indicadores_tablero }"><span>Tablero:</span> {{
-                      icon(checklistSeleccionado.indicadores_tablero) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.baterias_cables }"><span>Baterías:</span> {{
-                      icon(checklistSeleccionado.baterias_cables) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.presion_aire }"><span>Pres. Aire:</span> {{
-                      icon(checklistSeleccionado.presion_aire) }}</li>
-                  </ul>
-                </div>
-
-                <div class="categoria-tarjeta">
-                  <h4>Mecánica y Volco</h4>
-                  <ul>
-                    <li :class="{ 'falla': !checklistSeleccionado.llantas_estado }"><span>Llantas:</span> {{
-                      icon(checklistSeleccionado.llantas_estado) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.fugas_hidraulicas }"><span>Fugas Hidr:</span> {{
-                      icon(checklistSeleccionado.fugas_hidraulicas) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.pasadores_suspension }"><span>Pasadores:</span> {{
-                      icon(checklistSeleccionado.pasadores_suspension) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.fugas_aire }"><span>Fugas Aire:</span> {{
-                      icon(checklistSeleccionado.fugas_aire) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.grapas_chasis }"><span>Grapas chasis:</span> {{
-                      icon(checklistSeleccionado.grapas_chasis) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.cadena_cardan }"><span>Cardán:</span> {{
-                      icon(checklistSeleccionado.cadena_cardan) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.acoples_rapidos }"><span>Acoples:</span> {{
-                      icon(checklistSeleccionado.acoples_rapidos) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.mangueras }"><span>Mangueras:</span> {{
-                      icon(checklistSeleccionado.mangueras) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.estado_volco }"><span>Volco:</span> {{
-                      icon(checklistSeleccionado.estado_volco) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.soporte_volco }"><span>Soporte volco:</span> {{
-                      icon(checklistSeleccionado.soporte_volco) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.tanque_combustible }"><span>Tanque comb:</span> {{
-                      icon(checklistSeleccionado.tanque_combustible) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.motor }"><span>Motor:</span> {{
-                      icon(checklistSeleccionado.motor) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.sistema_cargado }"><span>Sist. Cargado:</span> {{
-                      icon(checklistSeleccionado.sistema_cargado) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.ganchos_compuerta }"><span>Ganchos:</span> {{
-                      icon(checklistSeleccionado.ganchos_compuerta) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.soportes_buge }"><span>Sop. Buje:</span> {{
-                      icon(checklistSeleccionado.soportes_buge) }}</li>
-                  </ul>
-                </div>
-
-                <div class="categoria-tarjeta">
-                  <h4>Kit y Documentos</h4>
-                  <ul>
-                    <li :class="{ 'falla': !checklistSeleccionado.documentos }"><span>Documentos:</span> {{
-                      icon(checklistSeleccionado.documentos) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.gato }"><span>Gato:</span> {{
-                      icon(checklistSeleccionado.gato) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.cruceta }"><span>Cruceta:</span> {{
-                      icon(checklistSeleccionado.cruceta) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.taco }"><span>Taco:</span> {{
-                      icon(checklistSeleccionado.taco) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.caja_herramientas }"><span>Herramientas:</span> {{
-                      icon(checklistSeleccionado.caja_herramientas) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.llanta_repuesto }"><span>Repuesto:</span> {{
-                      icon(checklistSeleccionado.llanta_repuesto) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.linterna }"><span>Linterna:</span> {{
-                      icon(checklistSeleccionado.linterna) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.senales_carretera }"><span>Señales:</span> {{
-                      icon(checklistSeleccionado.senales_carretera) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.botiquin }"><span>Botiquín:</span> {{
-                      icon(checklistSeleccionado.botiquin) }}</li>
-                    <li :class="{ 'falla': !checklistSeleccionado.extintor }"><span>Extintor:</span> {{
-                      icon(checklistSeleccionado.extintor) }}</li>
-                  </ul>
-                </div>
-              </div>
+            <div class="observaciones-caja">
+              <label><strong>Novedades y Observaciones del Conductor:</strong></label>
+              <p>{{ checklistSeleccionado.observaciones || 'Ninguna observación registrada.' }}</p>
             </div>
 
-            <div class="modal-actions"
-              style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #cbd5e1; display: flex; justify-content: space-between;">
-              <button @click="descargarPDF" class="btn-primary" :disabled="generandoPDF" title="Descargar reporte individual de la volqueta">
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-                {{ generandoPDF ? 'Generando...' : 'Descargar Reporte PDF' }}
-              </button>
+            <div class="grid-categorias">
+
+              <div class="categoria-tarjeta">
+                <h4>Luces y Seguridad</h4>
+                <ul>
+                  <li :class="{ 'falla': !checklistSeleccionado.luces_frontales }"><span>Frontales:</span> {{
+                    icon(checklistSeleccionado.luces_frontales) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.luces_traseras }"><span>Traseras:</span> {{
+                    icon(checklistSeleccionado.luces_traseras) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.direccionales_delanteras }"><span>Dir. Del:</span> {{
+                    icon(checklistSeleccionado.direccionales_delanteras) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.direccionales_traseras }"><span>Dir. Tras:</span> {{
+                    icon(checklistSeleccionado.direccionales_traseras) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.espejos_laterales }"><span>Espejos:</span> {{
+                    icon(checklistSeleccionado.espejos_laterales) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.alarma_retroceso }"><span>Alarma retro:</span> {{
+                    icon(checklistSeleccionado.alarma_retroceso) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.pito }"><span>Pito:</span> {{
+                    icon(checklistSeleccionado.pito) }}</li>
+                </ul>
+              </div>
+
+              <div class="categoria-tarjeta">
+                <h4>Cabina y Frenos</h4>
+                <ul>
+                  <li :class="{ 'falla': !checklistSeleccionado.freno_servicio }"><span>Freno serv:</span> {{
+                    icon(checklistSeleccionado.freno_servicio) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.freno_emergencia }"><span>Freno emer:</span> {{
+                    icon(checklistSeleccionado.freno_emergencia) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.direccion_suspension }"><span>Dir/Susp:</span> {{
+                    icon(checklistSeleccionado.direccion_suspension) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.cinturon_seguridad }"><span>Cinturón:</span> {{
+                    icon(checklistSeleccionado.cinturon_seguridad) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.vidrio_frontal }"><span>Vidrio:</span> {{
+                    icon(checklistSeleccionado.vidrio_frontal) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.limpia_brisas }"><span>Limpia brisas:</span> {{
+                    icon(checklistSeleccionado.limpia_brisas) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.silleteria }"><span>Silletería:</span> {{
+                    icon(checklistSeleccionado.silleteria) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.indicadores_tablero }"><span>Tablero:</span> {{
+                    icon(checklistSeleccionado.indicadores_tablero) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.baterias_cables }"><span>Baterías:</span> {{
+                    icon(checklistSeleccionado.baterias_cables) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.presion_aire }"><span>Pres. Aire:</span> {{
+                    icon(checklistSeleccionado.presion_aire) }}</li>
+                </ul>
+              </div>
+
+              <div class="categoria-tarjeta">
+                <h4>Mecánica y Volco</h4>
+                <ul>
+                  <li :class="{ 'falla': !checklistSeleccionado.llantas_estado }"><span>Llantas:</span> {{
+                    icon(checklistSeleccionado.llantas_estado) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.fugas_hidraulicas }"><span>Fugas Hidr:</span> {{
+                    icon(checklistSeleccionado.fugas_hidraulicas) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.pasadores_suspension }"><span>Pasadores:</span> {{
+                    icon(checklistSeleccionado.pasadores_suspension) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.fugas_aire }"><span>Fugas Aire:</span> {{
+                    icon(checklistSeleccionado.fugas_aire) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.grapas_chasis }"><span>Grapas chasis:</span> {{
+                    icon(checklistSeleccionado.grapas_chasis) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.cadena_cardan }"><span>Cardán:</span> {{
+                    icon(checklistSeleccionado.cadena_cardan) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.acoples_rapidos }"><span>Acoples:</span> {{
+                    icon(checklistSeleccionado.acoples_rapidos) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.mangueras }"><span>Mangueras:</span> {{
+                    icon(checklistSeleccionado.mangueras) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.estado_volco }"><span>Volco:</span> {{
+                    icon(checklistSeleccionado.estado_volco) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.soporte_volco }"><span>Soporte volco:</span> {{
+                    icon(checklistSeleccionado.soporte_volco) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.tanque_combustible }"><span>Tanque comb:</span> {{
+                    icon(checklistSeleccionado.tanque_combustible) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.motor }"><span>Motor:</span> {{
+                    icon(checklistSeleccionado.motor) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.sistema_cargado }"><span>Sist. Cargado:</span> {{
+                    icon(checklistSeleccionado.sistema_cargado) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.ganchos_compuerta }"><span>Ganchos:</span> {{
+                    icon(checklistSeleccionado.ganchos_compuerta) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.soportes_buge }"><span>Sop. Buje:</span> {{
+                    icon(checklistSeleccionado.soportes_buge) }}</li>
+                </ul>
+              </div>
+
+              <div class="categoria-tarjeta">
+                <h4>Kit y Documentos</h4>
+                <ul>
+                  <li :class="{ 'falla': !checklistSeleccionado.documentos }"><span>Documentos:</span> {{
+                    icon(checklistSeleccionado.documentos) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.gato }"><span>Gato:</span> {{
+                    icon(checklistSeleccionado.gato) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.cruceta }"><span>Cruceta:</span> {{
+                    icon(checklistSeleccionado.cruceta) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.taco }"><span>Taco:</span> {{
+                    icon(checklistSeleccionado.taco) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.caja_herramientas }"><span>Herramientas:</span> {{
+                    icon(checklistSeleccionado.caja_herramientas) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.llanta_repuesto }"><span>Repuesto:</span> {{
+                    icon(checklistSeleccionado.llanta_repuesto) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.linterna }"><span>Linterna:</span> {{
+                    icon(checklistSeleccionado.linterna) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.senales_carretera }"><span>Señales:</span> {{
+                    icon(checklistSeleccionado.senales_carretera) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.botiquin }"><span>Botiquín:</span> {{
+                    icon(checklistSeleccionado.botiquin) }}</li>
+                  <li :class="{ 'falla': !checklistSeleccionado.extintor }"><span>Extintor:</span> {{
+                    icon(checklistSeleccionado.extintor) }}</li>
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
+
+          <div class="modal-actions">
+            <button @click="descargarPDF" class="btn-primary btn-modalCheck" :disabled="generandoPDF"
+              title="Descargar reporte individual de la volqueta">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              {{ generandoPDF ? 'Generando...' : 'Descargar Reporte PDF' }}
+            </button>
+          </div>
+        </BaseModal>
       </div>
     </div>
   </div>
@@ -304,7 +298,8 @@
       <div style="border-bottom: 2px solid #1e3a8a; margin-bottom: 8px;"></div>
 
       <div style="text-align: center; margin-bottom: 8px;">
-        <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">REPORTE DE INSPECCIÓN PREOPERACIONAL DE VEHÍCULO</span>
+        <span style="font-size: 13px; font-weight: bold; color: #1e3a8a;">REPORTE DE INSPECCIÓN PREOPERACIONAL DE
+          VEHÍCULO</span>
       </div>
 
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
@@ -314,12 +309,14 @@
               <strong>Conductor:</strong> {{ checklistSeleccionado ? checklistSeleccionado.conductor : '' }}
             </td>
             <td style="padding: 4px; border: 1px solid #94a3b8; background-color: #f1f5f9;">
-              <strong>Vehículo:</strong> {{ checklistSeleccionado ? checklistSeleccionado.placa + ' (' + checklistSeleccionado.marca + ')' : '' }}
+              <strong>Vehículo:</strong> {{ checklistSeleccionado ? checklistSeleccionado.placa + ' (' +
+                checklistSeleccionado.marca + ')' : '' }}
             </td>
           </tr>
           <tr>
             <td style="padding: 4px; border: 1px solid #94a3b8;">
-              <strong>Fecha de Revisión:</strong> {{ checklistSeleccionado ? formatearFecha(checklistSeleccionado.fecha_formateada) : '' }}
+              <strong>Fecha de Revisión:</strong> {{ checklistSeleccionado ?
+                formatearFecha(checklistSeleccionado.fecha_formateada) : '' }}
             </td>
             <td style="padding: 4px; border: 1px solid #94a3b8;">
               <strong>Hora:</strong> {{ checklistSeleccionado ? checklistSeleccionado.hora : '' }}
@@ -328,8 +325,7 @@
           <tr>
             <td colspan="2" style="padding: 4px; border: 1px solid #94a3b8;">
               <strong>Resultado:</strong>
-              <span v-if="checklistSeleccionado"
-                style="font-weight: bold; padding: 2px 8px; color: #ffffff;"
+              <span v-if="checklistSeleccionado" style="font-weight: bold; padding: 2px 8px; color: #ffffff;"
                 :style="{ backgroundColor: checklistSeleccionado.apto_para_trabajar ? '#16a34a' : '#dc2626' }">
                 {{ checklistSeleccionado.apto_para_trabajar ? 'VEHÍCULO APTO PARA TRABAJAR' : 'NO APTO – REQUIERE REVISIÓN' }}
               </span>
@@ -416,7 +412,8 @@
       <div style="border-bottom: 2px solid #1e3a8a; margin-bottom: 6px;"></div>
 
       <div style="text-align: center; margin-bottom: 6px;">
-        <span style="font-size: 12px; font-weight: bold; color: #1e3a8a;">MATRIZ SEMANAL DE INSPECCIONES PREOPERACIONALES</span>
+        <span style="font-size: 12px; font-weight: bold; color: #1e3a8a;">MATRIZ SEMANAL DE INSPECCIONES
+          PREOPERACIONALES</span>
       </div>
 
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;">
@@ -432,7 +429,8 @@
           </tr>
           <tr>
             <td style="padding: 3px; border: 1px solid #94a3b8;"><strong>SOAT Vence:</strong> {{ fechaSoatPDF }}</td>
-            <td style="padding: 3px; border: 1px solid #94a3b8;"><strong>TECNOMECÁNICA Vence:</strong> {{ fechaTecnoPDF }}</td>
+            <td style="padding: 3px; border: 1px solid #94a3b8;"><strong>TECNOMECÁNICA Vence:</strong> {{ fechaTecnoPDF
+              }}</td>
           </tr>
         </tbody>
       </table>
@@ -500,6 +498,7 @@ import { debounce } from '@/utils/debounce';
 import SkeletonTabla from '@/components/SkeletonTabla.vue';
 import ErrorBanner from '@/components/ErrorBanner.vue';
 import { iniciarCarga, detenerCarga } from '@/loading';
+import BaseModal from '@/components/BaseModal.vue';
 const listaChecklists = ref([]);
 const listaVehiculos = ref([]);
 const cargando = ref(false);
@@ -916,6 +915,8 @@ const cerrarModal = () => {
   modalVisible.value = false;
   checklistSeleccionado.value = null;
 };
+
+watch(modalVisible, (nuevo) => { if (!nuevo) checklistSeleccionado.value = null; });
 
 const icon = (valor) => valor ? 'OK' : 'ERROR';
 </script>

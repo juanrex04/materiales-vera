@@ -2,8 +2,7 @@
    1. VARIABLES GLOBALES Y RESET
    ======================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
 :root {
   --font-family: "Inter", system-ui, -apple-system, sans-serif;
@@ -17,8 +16,10 @@
   --danger-red: #ef4444;
   --border-color: #e2e8f0;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --radius-md: 10px;
   --radius-lg: 16px;
   --transition-fast: 0.15s ease;
@@ -212,7 +213,11 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-blue), var(--primary-hover));
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue),
+    var(--primary-hover)
+  );
   color: #ffffff !important;
   border: none;
   padding: 0.6rem 1.2rem;
@@ -356,13 +361,17 @@ body {
 }
 
 .bienvenida-card::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
   left: 0;
-  background: linear-gradient(to bottom right, transparent, rgba(255, 255, 255, 0.1));
+  background: linear-gradient(
+    to bottom right,
+    transparent,
+    rgba(255, 255, 255, 0.1)
+  );
   pointer-events: none;
 }
 
@@ -791,7 +800,11 @@ textarea:focus {
 .login-box button {
   width: 100%;
   padding: 0.85rem;
-  background: linear-gradient(135deg, var(--primary-blue), var(--primary-hover));
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue),
+    var(--primary-hover)
+  );
   color: white;
   border: none;
   border-radius: var(--radius-md);
@@ -1438,7 +1451,9 @@ a.btn-nav {
   color: #1e293b;
   cursor: pointer;
   font-size: 0.85rem;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .paginador-btn:hover:not(:disabled) {
@@ -1461,11 +1476,14 @@ a.btn-nav {
   color: #64748b;
 }
 
+.btn-modalCheck{
+  margin-top: 1.5rem;
+}
+
 /* ========================================================
    9. RESPONSIVE DESIGN & BURGER MENU OPTIMIZATION
    ======================================================== */
 @media (max-width: 1109px) {
-
   /* Activa la visualización del botón hamburguesa */
   .hamburger {
     display: block;
@@ -1481,7 +1499,7 @@ a.btn-nav {
 
   .login-layout {
     flex-direction: column;
-    gap: .5rem;
+    gap: 0.5rem;
   }
 
   .login-brand {
@@ -1524,7 +1542,8 @@ a.btn-nav {
     max-height: 0;
     overflow: hidden;
     opacity: 0;
-    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transition:
+      max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
       opacity 0.3s ease,
       padding 0.3s ease;
   }
@@ -1764,7 +1783,6 @@ a.btn-nav {
    11. RESPONSIVE: TABLETS (≤768px) — TABLA → CARDS
    ======================================================== */
 @media (max-width: 768px) {
-
   /* ---- TABLA → CARD LAYOUT ---- */
   .tabla-contenedor {
     border: none;
@@ -1790,7 +1808,9 @@ a.btn-nav {
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
     padding: 1rem;
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition:
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
   }
 
   tbody tr:hover {
@@ -1970,7 +1990,6 @@ a.btn-nav {
    12. RESPONSIVE: TELÉFONOS (≤480px)
    ======================================================== */
 @media (max-width: 480px) {
-
   .content {
     padding: 0.75rem;
   }
@@ -2051,26 +2070,25 @@ a.btn-nav {
     margin-bottom: 2px;
   }
 
-  /* Modal bottom-sheet: acciones siempre visibles */
+  /* Modal centrado (estilo Bootstrap): acciones siempre visibles */
   .modal-content {
-    width: 100%;
-    max-width: 100%;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    width: 92%;
+    max-width: 420px;
+    border-radius: var(--radius-lg);
     max-height: 80vh;
-    margin-top: auto;
-    padding: 1rem;
+    margin: auto;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
 
-  .modal-content h3 {
-    font-size: 1.05rem;
-    margin: 0 0 0.5rem 0;
+  .modal-header {
     flex-shrink: 0;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.75rem;
   }
 
-  /* El form llena el espacio restante */
   .modal-content form {
     display: flex;
     flex-direction: column;
@@ -2079,7 +2097,6 @@ a.btn-nav {
     min-height: 0;
   }
 
-  /* Los campos scrollean, los botones no */
   .modal-content form > .form-vertical,
   .modal-content form > .form-grid {
     flex: 1;
@@ -2089,14 +2106,18 @@ a.btn-nav {
     padding-bottom: 0.5rem;
   }
 
-  .modal-content form .modal-actions {
+  .modal-content > .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding-bottom: 0.5rem;
+  }
+
+  .modal-content form .modal-actions,
+  .modal-content > .modal-actions {
     flex-shrink: 0;
     padding-top: 0.75rem;
     border-top: 1px solid var(--border-color);
-  }
-
-  .modal-overlay {
-    align-items: flex-end;
   }
 
   .modal-actions {
