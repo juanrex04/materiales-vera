@@ -45,10 +45,17 @@
           </div>
 
           <div class="acciones-filtros">
-            <button @click="limpiarFiltros" class="btn-secondary">
-              Limpiar
+            <button @click="limpiarFiltros" class="btn-edit">
+              Limpiar filtros
             </button>
-            <button @click="generarPDFSemanal" class="btn-primary" :disabled="generandoPDF">
+            <button @click="generarPDFSemanal" class="btn-primary" :disabled="generandoPDF" title="Generar reporte semanal por volqueta">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
               {{ generandoPDF ? 'Generando...' : 'Descargar PDF Semanal' }}
             </button>
           </div>
@@ -75,7 +82,6 @@
                 <td data-label="Conductor">{{ chk.conductor }}</td>
                 <td data-label="Vehículo">
                   <span class="placa-badge" style="margin-right: 6px;">{{ chk.placa }}</span>
-                  <small class="text-muted">({{ chk.marca }})</small>
                 </td>
                 <td data-label="Estado">
                   <span :class="chk.apto_para_trabajar ? 'badge-estado disponible' : 'badge-estado mantenimiento'">
@@ -85,7 +91,7 @@
                 </td>
                 <td data-label="Acciones">
                   <div class="acciones-tabla">
-                    <button @click="abrirModalDetalles(chk)" class="btn-action btn-primary" title="Ver reporte">
+                    <button @click="abrirModalDetalles(chk)" class="btn-action btn-primary" title="Ver reporte individual">
                       <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
@@ -256,11 +262,16 @@
 
             <div class="modal-actions"
               style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #cbd5e1; display: flex; justify-content: space-between;">
-              <button @click="descargarPDF" class="btn-primary" :disabled="generandoPDF">
+              <button @click="descargarPDF" class="btn-primary" :disabled="generandoPDF" title="Descargar reporte individual de la volqueta">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
                 {{ generandoPDF ? 'Generando...' : 'Descargar Reporte PDF' }}
               </button>
-
-              <button @click="cerrarModal" class="btn-secondary">Cerrar</button>
             </div>
           </div>
         </div>
