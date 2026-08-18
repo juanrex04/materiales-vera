@@ -29,18 +29,12 @@
 
           <div class="fecha-input-wrapper filtro-item">
             <label>Fecha Desde:</label>
-            <div class="fecha-display" @click="$refs.dateInicio?.showPicker()">
-              {{ filtros.fechaInicio ? formatearFechaCorta(filtros.fechaInicio) : 'dd / mm / aaaa' }}
-            </div>
-            <input type="date" ref="dateInicio" v-model="filtros.fechaInicio" class="hidden-date" />
+            <input type="date" v-model="filtros.fechaInicio" class="fecha-input" />
           </div>
 
           <div class="fecha-input-wrapper filtro-item">
             <label>Fecha Hasta:</label>
-            <div class="fecha-display" @click="$refs.dateFin?.showPicker()">
-              {{ filtros.fechaFin ? formatearFechaCorta(filtros.fechaFin) : 'dd / mm / aaaa' }}
-            </div>
-            <input type="date" ref="dateFin" v-model="filtros.fechaFin" class="hidden-date" />
+            <input type="date" v-model="filtros.fechaFin" class="fecha-input" />
           </div>
 
           <div class="form-group filtro-item">
@@ -347,11 +341,6 @@ const formatearFecha = (fecha) => {
   if (!mes) return fechaTexto;
 
   return `${dia} de ${mes} de ${anio}`;
-};
-
-const formatearFechaCorta = (fechaISO) => {
-  const [a, m, d] = fechaISO.split('-');
-  return `${parseInt(d)} de ${MESES[parseInt(m) - 1].toLowerCase()} de ${a}`;
 };
 
 // LÓGICA DE FILTRADO (SERVER-SIDE: los filtros viajan al backend en cargarChecklists)

@@ -37,7 +37,7 @@
             </div>
             
             <router-link to="/cambiar-password" class="btn-nav" active-class="activo">
-                Cambiar Clave
+                Cambiar Contraseña
             </router-link>
 
             <button @click="cerrarSesion" class="btn-logout">Cerrar Sesión</button>

@@ -1,6 +1,7 @@
 <template>
-  <div class="login-container">
-    <div class="login-box">
+  <div class="login-container password-form">
+    <div class="login-layout">
+      <div class="login-box">
       <h2>Cambiar Contraseña</h2>
       <p v-if="esPrimerIngreso">Es tu primer inicio de sesión. Debes cambiar tu contraseña para continuar.</p>
       <p v-else>Puedes cambiar tu contraseña en cualquier momento.</p>
@@ -31,11 +32,12 @@
         </button>
       </form>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { decodificarToken } from '@/auth';
 import { peticion } from '@/api';
@@ -52,6 +54,14 @@ const mensajeExito = ref('');
 const cargando = ref(false);
 const usuario = decodificarToken();
 const esPrimerIngreso = ref(usuario?.debe_cambiar_password === true);
+
+onMounted(() => {
+  document.body.style.overflow = 'hidden';
+});
+
+onUnmounted(() => {
+  document.body.style.overflow = '';
+});
 
 const cambiarContraseña = async () => {
   mensajeError.value = '';

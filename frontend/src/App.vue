@@ -11,14 +11,19 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import Navbar from '../src/components/NavBar.vue'; // Asegúrate de que la ruta coincida
+import { decodificarToken } from '@/auth';
+import Navbar from '../src/components/NavBar.vue';
 import OverlayCarga from '../src/components/OverlayCarga.vue';
 
 const route = useRoute();
 
-// Computada que devuelve true si la ruta actual es diferente al login (ej: '/')
 const mostrarNavbar = computed(() => {
-  return route.path !== '/';
+  if (route.path === '/') return false;
+  if (route.path === '/cambiar-password') {
+    const usuario = decodificarToken();
+    return usuario?.debe_cambiar_password === false;
+  }
+  return true;
 });
 </script>
 

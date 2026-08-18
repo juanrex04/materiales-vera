@@ -65,7 +65,34 @@ body {
 }
 
 .dashboard-container {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-container::before {
+  content: '';
+  position: absolute;
+  bottom: -40%;
+  left: -10%;
+  width: 120%;
+  height: 70%;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.dashboard-container::after {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -10%;
+  width: 60%;
+  height: 60%;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .header {
@@ -350,12 +377,13 @@ body {
    3. TARJETAS Y SECCIONES
    ======================================================== */
 .bienvenida-card {
-  background: linear-gradient(135deg, #1e3a8a, var(--primary-blue));
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: white;
   padding: 2rem;
   border-radius: var(--radius-lg);
   margin-bottom: 2rem;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
 }
@@ -391,8 +419,8 @@ body {
   background: white;
   padding: 2rem;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .titulo-acciones {
@@ -757,7 +785,7 @@ textarea:focus {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 100dvh;
   background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%);
   position: relative;
   overflow: hidden;
@@ -785,6 +813,15 @@ textarea:focus {
   background: rgba(255, 255, 255, 0.02);
   border-radius: 50%;
   pointer-events: none;
+}
+
+.password-form {
+  align-items: center;
+  padding-top: 0;
+}
+
+.header + .password-form {
+  height: calc(100dvh - 62px);
 }
 
 .login-layout {
@@ -1334,7 +1371,7 @@ textarea:focus {
   gap: 4px;
 }
 
-.fecha-display {
+.fecha-input {
   width: 100%;
   padding: 0.6rem;
   border: 1px solid var(--border-color);
@@ -1343,22 +1380,12 @@ textarea:focus {
   font-size: 0.95rem;
   background: white;
   color: #1e293b;
-  cursor: pointer;
   min-height: 34px;
-  display: flex;
-  align-items: center;
 }
 
-.fecha-display:hover {
+.fecha-input:focus {
   border-color: var(--primary-blue);
-}
-
-.hidden-date {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
+  outline: none;
 }
 
 .btn-limpiar-container {
@@ -1616,6 +1643,11 @@ a.btn-nav {
     padding-top: 8vh;
   }
 
+  .password-form {
+    align-items: center;
+    padding-top: 0;
+  }
+
   .login-layout {
     flex-direction: column;
     gap: 0.5rem;
@@ -1669,7 +1701,7 @@ a.btn-nav {
 
   /* Clase activada dinámicamente desde Vue */
   .nav-menu.nav-active {
-    max-height: calc(100vh - 4.5rem);
+    max-height: calc(100dvh - 4.5rem);
     opacity: 1;
     padding: 1.5rem;
     gap: 14px;
@@ -2148,6 +2180,11 @@ a.btn-nav {
   /* Login ajustado para teléfonos */
   .login-container {
     padding-top: 4vh;
+  }
+
+  .password-form {
+    align-items: center;
+    padding-top: 0;
   }
 
   .login-logo-wrap {
