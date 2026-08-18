@@ -6,10 +6,11 @@
       <p v-else>Puedes cambiar tu contraseña en cualquier momento.</p>
 
       <form @submit.prevent="cambiarContraseña">
+        <input type="text" autocomplete="username" hidden />
         <div class="form-group">
           <label>Nueva Contraseña</label>
           <div class="password-input-wrap">
-            <input :type="mostrarNueva ? 'text' : 'password'" v-model="passwordNueva" required placeholder="Mínimo 8 caracteres con un número" />
+            <input :type="mostrarNueva ? 'text' : 'password'" v-model="passwordNueva" required placeholder="Mínimo 8 caracteres con un número" autocomplete="new-password" />
             <TogglePassword v-model:visible="mostrarNueva" />
           </div>
         </div>
@@ -17,7 +18,7 @@
         <div class="form-group">
           <label>Confirmar Nueva Contraseña</label>
           <div class="password-input-wrap">
-            <input :type="mostrarConfirmar ? 'text' : 'password'" v-model="passwordConfirmar" required placeholder="Repite la nueva contraseña" />
+            <input :type="mostrarConfirmar ? 'text' : 'password'" v-model="passwordConfirmar" required placeholder="Repite la nueva contraseña" autocomplete="new-password" />
             <TogglePassword v-model:visible="mostrarConfirmar" />
           </div>
         </div>

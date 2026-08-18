@@ -11,13 +11,13 @@
       <form @submit.prevent="hacerLogin">
         <div class="form-group">
           <label for="documento">Número de Documento</label>
-          <input type="text" id="documento" inputmode="numeric" pattern="[0-9]*" maxlength="20" v-model="documento" required placeholder="Ingresa tu documento (cédula)" />
+          <input type="text" id="documento" inputmode="numeric" pattern="[0-9]*" maxlength="20" v-model="documento" required placeholder="Ingresa tu documento (cédula)" autocomplete="username" />
         </div>
 
         <div class="form-group">
           <label for="password">Contraseña</label>
           <div class="password-input-wrap">
-            <input :type="mostrarPassword ? 'text' : 'password'" id="password" v-model="password" required placeholder="******" />
+            <input :type="mostrarPassword ? 'text' : 'password'" id="password" v-model="password" required placeholder="******" autocomplete="current-password" />
             <TogglePassword v-model:visible="mostrarPassword" />
           </div>
         </div>
