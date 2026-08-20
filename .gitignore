@@ -1,4 +1,56 @@
+# Environment
 **/.env
-**/node_modules
+*.local
+
+# Dependencies
+node_modules/
+
+# Build output
+**/dist/
+**/dist-ssr/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+__screenshots__/
+
+# Editors / IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build info
+*.tsbuildinfo
+.eslintcache
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+
+# Vite
+*.timestamp-*-*.mjs
+
+# WhatsApp (puppeteer)
+.wwebjs_cache/
+whatsapp-sesion/
+
+# Private docs
 **/GUIA_RENDER.md
 **/PRESENTACION.md

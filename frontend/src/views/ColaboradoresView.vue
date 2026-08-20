@@ -4,7 +4,7 @@
             <div class="gestion-seccion">
                 <div class="titulo-acciones">
                     <h3>Listado de Colaboradores</h3>
-                    <button @click="abrirModalNuevo" class="btn-primary">Nuevo Colaborador</button>
+                    <button @click="abrirModalNuevo" class="btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Nuevo Colaborador</button>
                 </div>
 
                 <ErrorBanner v-if="errorMensaje" :mensaje="errorMensaje" @cerrar="errorMensaje = ''" />
@@ -27,6 +27,7 @@
 
                     <div class="acciones-filtros">
                         <button type="button" @click="limpiarFiltros" class="btn-edit">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                             Limpiar Filtros
                         </button>
                     </div>
@@ -137,6 +138,7 @@
                     </div>
                     <div class="modal-actions">
                         <button type="submit" class="btn-primary" :disabled="guardando">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             {{ guardando ? 'Guardando...' : 'Guardar' }}
                         </button>
                     </div>

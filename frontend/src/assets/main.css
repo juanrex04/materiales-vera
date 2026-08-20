@@ -450,12 +450,15 @@ table {
   min-width: 960px;
 }
 
-th,
-td {
+th, td {
   padding: 0.95rem 1.1rem;
   border-bottom: 1px solid var(--border-color);
-  text-align: left;
+  text-align: center;
   vertical-align: middle;
+}
+
+th {
+  text-align: center;
 }
 
 tbody tr {
@@ -480,7 +483,10 @@ th {
   border-bottom: 2px solid var(--border-color);
 }
 
-th:last-child,
+th:last-child {
+  text-align: center;
+}
+
 td:last-child {
   text-align: right;
   min-width: 180px;
@@ -1944,7 +1950,7 @@ a.btn-nav {
   table {
     min-width: 0;
     border-collapse: separate;
-    border-spacing: 0 0.75rem;
+    border-spacing: 0 1.5rem;
   }
 
   thead {
@@ -2148,6 +2154,10 @@ a.btn-nav {
   .gestion-seccion {
     padding: 0.75rem;
     border-radius: var(--radius-md);
+  }
+
+  table {
+    border-spacing: 0 1.5rem;
   }
 
   .bienvenida-card {

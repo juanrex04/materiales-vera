@@ -10,7 +10,7 @@
       <div class="gestion-seccion">
         <div class="titulo-acciones">
           <h2>Control de Inspecciones (Volquetas)</h2>
-          <button @click="cargarChecklists" class="btn-primary">Actualizar Lista</button>
+          <button @click="cargarChecklists" class="btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Actualizar Lista</button>
         </div>
 
         <div class="filtros-container">
@@ -48,6 +48,7 @@
 
           <div class="acciones-filtros">
             <button @click="limpiarFiltros" class="btn-edit">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
               Limpiar filtros
             </button>
             <button @click="generarPDFSemanal" class="btn-primary" :disabled="generandoPDF"

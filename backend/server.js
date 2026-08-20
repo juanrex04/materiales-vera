@@ -6,6 +6,10 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { body, param, validationResult } = require('express-validator')
 const { rateLimit } = require('express-rate-limit')
+const http = require('http');
+const { Server } = require('socket.io');
+const cron = require('node-cron');
+const whatsapp = require('./whatsapp');
 
 require('dotenv').config();
 
@@ -18,6 +22,14 @@ if (missing.length > 0) {
 }
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : 'http://localhost:5173',
+    credentials: true
+  }
+});
+whatsapp.configurarSocket(io);
 const PORT = process.env.PORT || 3000;
 
 // Render y otros proxies envían el X-Forwarded-For; sin esto el rate limiter
@@ -189,7 +201,8 @@ app.post('/api/login',loginLimiter, [
 function construirFiltrosColaboradores(req) {
   const condiciones = [];
   const parametros = [];
-  const { nombre, rol, excluirId } = req.query;
+  const joins = [];
+  const { nombre, rol, excluirId, sinNotificacion } = req.query;
   const tNombre = (nombre || '').trim().replace(/[^a-zA-ZÁÉÍÓÚÜÑáéíóúüñ '.0-9-]/g, '');
   const tRol = (rol || '').trim();
 
@@ -205,16 +218,21 @@ function construirFiltrosColaboradores(req) {
     condiciones.push('c.id != ?');
     parametros.push(Number(excluirId));
   }
+  if (sinNotificacion === '1') {
+    joins.push('LEFT JOIN notificaciones_config nc ON nc.colaborador_id = c.id');
+    condiciones.push('nc.id IS NULL');
+  }
 
   const where = condiciones.length > 0 ? `WHERE ${condiciones.join(' AND ')}` : '';
-  return { where, parametros };
+  const joinExtra = joins.join(' ');
+  return { where, parametros, joinExtra };
 }
 
 app.get('/api/admin/colaboradores', verificarToken, esAdmin, async (req, res) => {
   try {
-    const { where, parametros } = construirFiltrosColaboradores(req);
-    const baseQuery = `FROM colaboradores c JOIN roles r ON c.rol_id = r.id ${where}`;
-    const seleccion = `SELECT c.id, c.nombre, c.documento, r.nombre as rol, c.licencia_conducir FROM colaboradores c JOIN roles r ON c.rol_id = r.id ${where}`;
+    const { where, parametros, joinExtra } = construirFiltrosColaboradores(req);
+    const baseQuery = `FROM colaboradores c JOIN roles r ON c.rol_id = r.id ${joinExtra} ${where}`;
+    const seleccion = `SELECT c.id, c.nombre, c.documento, r.nombre as rol, c.licencia_conducir FROM colaboradores c JOIN roles r ON c.rol_id = r.id ${joinExtra} ${where}`;
 
     if (req.query.pagina) {
       const { porPagina, offset } = obtenerPaginacion(req);
@@ -826,12 +844,294 @@ app.put('/api/cambiar-password', verificarToken, [
 });
 
 // ==========================================
+// 9. MÓDULO WHATSAPP - CONEXIÓN Y ALERTAS
+// ==========================================
+
+// Estado de conexión WhatsApp
+app.get('/api/admin/whatsapp-status', verificarToken, esAdmin, (req, res) => {
+  res.json(whatsapp.obtenerEstado());
+});
+
+// Iniciar conexión WhatsApp (genera QR)
+app.post('/api/admin/whatsapp-connect', verificarToken, esAdmin, (req, res) => {
+  const estado = whatsapp.obtenerEstado();
+  if (estado.estado === 'conectado') {
+    return res.json({ mensaje: 'WhatsApp ya está conectado', estado: estado.estado });
+  }
+  whatsapp.iniciarSesion();
+  res.json({ mensaje: 'Iniciando conexión...', estado: 'qr_pendiente' });
+});
+
+// Enviar mensaje de prueba
+app.post('/api/admin/whatsapp-test', verificarToken, esAdmin, [
+  body('telefono').trim().matches(/^\+?\d{7,15}$/).withMessage('Teléfono inválido'),
+], validar, async (req, res) => {
+  try {
+    const texto = '✅ *Materiales Vera* - Mensaje de prueba.\n\nSi recibes este mensaje, la conexión WhatsApp está funcionando correctamente.';
+    await whatsapp.enviarMensaje(req.body.telefono, texto);
+    res.json({ mensaje: 'Mensaje de prueba enviado exitosamente' });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Error al enviar mensaje de prueba' });
+  }
+});
+
+// Enviar alertas manualmente a destinatarios
+app.post('/api/admin/whatsapp-send-alerts', verificarToken, esAdmin, async (req, res) => {
+  try {
+    const estadoWA = whatsapp.obtenerEstado();
+    if (estadoWA.estado !== 'conectado') {
+      return res.status(400).json({ error: 'WhatsApp no está conectado. Conecte primero.' });
+    }
+
+    const [destinatarios] = await pool.query(
+      'SELECT nc.telefono, c.nombre FROM notificaciones_config nc JOIN colaboradores c ON c.id = nc.colaborador_id WHERE nc.recibir_alertas = 1'
+    );
+    if (destinatarios.length === 0) {
+      return res.status(400).json({ error: 'No hay destinatarios configurados con alertas activas.' });
+    }
+
+    const [vehiculos] = await pool.query(
+      'SELECT id, placa, fecha_soat, fecha_tecnomecanica, fecha_ultimo_cambio_aceite FROM vehiculos'
+    );
+    const fechaActual = new Date();
+    const alertas = [];
+
+    for (const v of vehiculos) {
+      const documentos = [
+        { tipo: 'SOAT', fecha: new Date(v.fecha_soat) },
+        { tipo: 'TECNOMECANICA', fecha: new Date(v.fecha_tecnomecanica) },
+      ];
+      if (v.fecha_ultimo_cambio_aceite) {
+        const aceiteProximo = new Date(v.fecha_ultimo_cambio_aceite);
+        aceiteProximo.setMonth(aceiteProximo.getMonth() + 3);
+        documentos.push({ tipo: 'ACEITE', fecha: aceiteProximo });
+      } else {
+        documentos.push({ tipo: 'ACEITE', fecha: null });
+      }
+      for (const doc of documentos) {
+        const diasRestantes = doc.fecha === null
+          ? -999
+          : Math.ceil((doc.fecha - fechaActual) / (1000 * 60 * 60 * 24));
+        if (diasRestantes <= 1) {
+          alertas.push({ vehiculo_id: v.id, placa: v.placa, tipo: doc.tipo, dias: diasRestantes });
+        }
+      }
+    }
+
+    if (alertas.length === 0) {
+      return res.status(400).json({ error: 'No hay documentos en alerta o vencidos pendientes por notificar.' });
+    }
+
+    const lineas = alertas.map(a => {
+      const textoDias = a.dias < 0
+        ? `venci\u00F3 hace ${Math.abs(a.dias)} d\u00EDa(s)`
+        : a.dias === 0
+          ? 'vence HOY'
+          : `vence en ${a.dias} d\u00EDa(s)`;
+      return `\u2022 ${a.tipo} veh\u00EDculo ${a.placa} ${textoDias}`;
+    });
+    const texto = `\u26A0\uFE0F *Materiales Vera - Alerta Documentos*\n\n${lineas.join('\n')}\n\nPor favor tome las acciones necesarias a la brevedad.`;
+
+    let enviados = 0;
+    for (const dest of destinatarios) {
+      try {
+        await whatsapp.enviarMensaje(dest.telefono, texto);
+        enviados++;
+      } catch { /* continuar con otros destinatarios */ }
+    }
+
+    res.json({ mensaje: `Alertas enviadas a ${enviados} destinatario(s)`, alertas: alertas.length, destinatarios: enviados });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al enviar alertas' });
+  }
+});
+
+// CRUD Notificaciones Config - Listar destinatarios
+app.get('/api/admin/notificaciones-config', verificarToken, esAdmin, async (req, res) => {
+  try {
+    const [filas] = await pool.query(`
+      SELECT nc.id, nc.colaborador_id, nc.telefono, nc.recibir_alertas, c.nombre
+      FROM notificaciones_config nc
+      JOIN colaboradores c ON c.id = nc.colaborador_id
+      ORDER BY c.nombre ASC
+    `);
+    res.json(filas);
+  } catch (error) {
+    console.error('Error al listar notificaciones config:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Agregar destinatario
+app.post('/api/admin/notificaciones-config', verificarToken, esAdmin, [
+  body('colaborador_id').isInt().withMessage('colaborador_id debe ser un número entero'),
+  body('telefono').trim().notEmpty().withMessage('El teléfono es requerido')
+    .matches(/^\+?\d{7,15}$/).withMessage('Formato de teléfono inválido (ej: +573001234567)'),
+], validar, async (req, res) => {
+  const { colaborador_id, telefono } = req.body;
+  try {
+    const [existe] = await pool.query('SELECT id FROM colaboradores WHERE id = ?', [colaborador_id]);
+    if (existe.length === 0) return res.status(404).json({ error: 'Colaborador no encontrado' });
+
+    const [yaConfigurado] = await pool.query('SELECT id FROM notificaciones_config WHERE colaborador_id = ?', [colaborador_id]);
+    if (yaConfigurado.length > 0) return res.status(409).json({ error: 'Este administrador ya tiene un número configurado. Edítalo en su lugar.' });
+
+    const [result] = await pool.query(
+      'INSERT INTO notificaciones_config (colaborador_id, telefono) VALUES (?, ?)',
+      [colaborador_id, telefono]
+    );
+    res.json({ id: result.insertId, mensaje: 'Destinatario guardado exitosamente' });
+  } catch (error) {
+    if (esErrorDuplicado(error)) return res.status(409).json({ error: 'Este colaborador ya está configurado' });
+    console.error('Error al crear notificación config:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Editar destinatario
+app.put('/api/admin/notificaciones-config/:id', verificarToken, esAdmin, [
+  param('id').isInt().withMessage('ID inválido'),
+  body('telefono').optional().trim()
+    .matches(/^\+?\d{7,15}$/).withMessage('Formato de teléfono inválido'),
+  body('recibir_alertas').optional().isBoolean().withMessage('recibir_alertas debe ser booleano'),
+], validar, async (req, res) => {
+  const { id } = req.params;
+  const campos = [];
+  const valores = [];
+
+  if (req.body.telefono !== undefined) { campos.push('telefono = ?'); valores.push(req.body.telefono); }
+  if (req.body.recibir_alertas !== undefined) { campos.push('recibir_alertas = ?'); valores.push(req.body.recibir_alertas ? 1 : 0); }
+
+  if (campos.length === 0) return res.status(400).json({ error: 'No hay campos para actualizar' });
+
+  valores.push(id);
+  try {
+    const [result] = await pool.query(`UPDATE notificaciones_config SET ${campos.join(', ')} WHERE id = ?`, valores);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Destinatario no encontrado' });
+    res.json({ mensaje: 'Destinatario actualizado' });
+  } catch (error) {
+    console.error('Error al actualizar notificación config:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Eliminar destinatario
+app.delete('/api/admin/notificaciones-config/:id', verificarToken, esAdmin, [
+  param('id').isInt().withMessage('ID inválido'),
+], validar, async (req, res) => {
+  try {
+    const [result] = await pool.query('DELETE FROM notificaciones_config WHERE id = ?', [req.params.id]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Destinatario no encontrado' });
+    res.json({ mensaje: 'Destinatario eliminado' });
+  } catch (error) {
+    console.error('Error al eliminar notificación config:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// ==========================================
+// CRON: Alertas WhatsApp diarias (7:00 AM)
+// ==========================================
+cron.schedule('0 7 * * *', async () => {
+  console.log('[Cron] Iniciando revisión de alertas WhatsApp...');
+  const estadoWA = whatsapp.obtenerEstado();
+  if (estadoWA.estado !== 'conectado') {
+    console.log('[Cron] WhatsApp no conectado, saltando envío.');
+    return;
+  }
+
+  try {
+    const fechaActual = new Date();
+    const [vehiculos] = await pool.query('SELECT * FROM vehiculos');
+
+    const alertas = [];
+    for (const v of vehiculos) {
+      const documentos = [
+        { tipo: 'SOAT', fecha: new Date(v.fecha_soat), umbral: 1 },
+        { tipo: 'TECNOMECANICA', fecha: new Date(v.fecha_tecnomecanica), umbral: 1 },
+      ];
+
+      if (v.fecha_ultimo_cambio_aceite) {
+        const aceiteProximo = new Date(v.fecha_ultimo_cambio_aceite);
+        aceiteProximo.setMonth(aceiteProximo.getMonth() + 3);
+        documentos.push({ tipo: 'ACEITE', fecha: aceiteProximo, umbral: 1 });
+      } else {
+        documentos.push({ tipo: 'ACEITE', fecha: null, umbral: 1 });
+      }
+
+      for (const doc of documentos) {
+        let diasRestantes;
+        if (doc.fecha === null) {
+          diasRestantes = -999;
+        } else {
+          diasRestantes = Math.ceil((doc.fecha - fechaActual) / (1000 * 60 * 60 * 24));
+        }
+
+        if (diasRestantes <= doc.umbral) {
+          const [existe] = await pool.query(
+            'SELECT id FROM notificaciones_enviadas WHERE vehiculo_id = ? AND tipo_documento = ? AND fecha_notificacion = CURDATE()',
+            [v.id, doc.tipo]
+          );
+          if (existe.length === 0) {
+            alertas.push({ vehiculo_id: v.id, placa: v.placa, tipo: doc.tipo, dias: diasRestantes });
+          }
+        }
+      }
+    }
+
+    if (alertas.length === 0) {
+      console.log('[Cron] No hay alertas pendientes.');
+      return;
+    }
+
+    const [destinatarios] = await pool.query(
+      'SELECT nc.id, nc.telefono, c.nombre FROM notificaciones_config nc JOIN colaboradores c ON c.id = nc.colaborador_id WHERE nc.recibir_alertas = 1'
+    );
+
+    if (destinatarios.length === 0) {
+      console.log('[Cron] No hay destinatarios configurados.');
+      return;
+    }
+
+    const lineas = alertas.map(a => {
+      const textoDias = a.dias < 0
+        ? `venció hace ${Math.abs(a.dias)} día(s)`
+        : a.dias === 0
+          ? 'vence HOY'
+          : `vence en ${a.dias} día(s)`;
+      return `• ${a.tipo} vehículo ${a.placa} ${textoDias}`;
+    });
+
+    const texto = `⚠️ *Materiales Vera - Alerta Documentos*\n\n${lineas.join('\n')}\n\nPor favor tome las acciones necesarias a la brevedad.`;
+
+    for (const dest of destinatarios) {
+      try {
+        await whatsapp.enviarMensaje(dest.telefono, texto);
+        console.log(`[Cron] Mensaje enviado a ${dest.nombre} (${dest.telefono})`);
+        for (const alerta of alertas) {
+          await pool.query(
+            'INSERT IGNORE INTO notificaciones_enviadas (vehiculo_id, tipo_documento, fecha_notificacion) VALUES (?, ?, CURDATE())',
+            [alerta.vehiculo_id, alerta.tipo]
+          );
+        }
+      } catch (err) {
+        console.error(`[Cron] Error enviando a ${dest.telefono}:`, err.message);
+      }
+    }
+
+    console.log(`[Cron] Procesadas ${alertas.length} alertas para ${destinatarios.length} destinatarios.`);
+  } catch (error) {
+    console.error('[Cron] Error en revisión de alertas:', error);
+  }
+});
+
+// ==========================================
 // INICIAR EL SERVIDOR
 // ==========================================
 if (require.main === module) {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Servidor de Materiales Vera corriendo de forma segura en: http://localhost:${PORT}`);
   });
 }
 
-module.exports = { app, pool };
+module.exports = { app, pool, server };

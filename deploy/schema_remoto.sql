@@ -157,3 +157,31 @@ ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 INSERT INTO colaboradores (documento, nombre, password, rol_id, licencia_conducir, debe_cambiar_password)
 VALUES ('11111', 'Administrador', '$2b$10$39p50K5ENpGM6812WkotHOpGDnNR6FtYZrkadZQ1EenAo1XVUmafa', 1, NULL, TRUE)
 ON DUPLICATE KEY UPDATE documento = documento;
+
+-- ------------------------------------------------------------
+-- TABLA: notificaciones_config
+-- Almacena los destinatarios que reciben alertas WhatsApp
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS notificaciones_config (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `colaborador_id` int NOT NULL,
+  `telefono` varchar(20) NOT NULL,
+  `recibir_alertas` tinyint(1) DEFAULT '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_colaborador` (`colaborador_id`),
+  CONSTRAINT `notificaciones_config_ibfk_1` FOREIGN KEY (`colaborador_id`) REFERENCES `colaboradores` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- ------------------------------------------------------------
+-- TABLA: notificaciones_enviadas
+-- Tracking de notificaciones enviadas para evitar duplicados
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS notificaciones_enviadas (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `vehiculo_id` int NOT NULL,
+  `tipo_documento` enum('SOAT','TECNOMECANICA','ACEITE') NOT NULL,
+  `fecha_notificacion` date NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_notificacion` (`vehiculo_id`, `tipo_documento`, `fecha_notificacion`),
+  CONSTRAINT `notificaciones_enviadas_ibfk_1` FOREIGN KEY (`vehiculo_id`) REFERENCES `vehiculos` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
