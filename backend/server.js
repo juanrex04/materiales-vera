@@ -1076,7 +1076,7 @@ app.delete('/api/admin/notificaciones-config/:id', verificarToken, esAdmin, [
 // ==========================================
 // CRON: Alertas WhatsApp diarias (7:00 AM)
 // ==========================================
-cron.schedule('30 07 * * *', async () => {
+cron.schedule('07 08 * * *', async () => {
   console.log('[Cron] Iniciando revisión de alertas WhatsApp...');
   const estadoWA = whatsapp.obtenerEstado();
   if (estadoWA.estado !== 'conectado') {
