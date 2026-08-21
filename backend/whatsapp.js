@@ -1,9 +1,7 @@
 const makeWASocket = require('@whiskeysockets/baileys').default;
-const { useMultiFileAuthState, DisconnectReason, Browsers, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { DisconnectReason, Browsers, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { useMySQLAuthState } = require('./whatsappAuthStore');
 const qrcode = require('qrcode');
-const path = require('path');
-const os = require('os');
-const fs = require('fs/promises');
 const pino = require('pino');
 
 let sock = null;
@@ -11,11 +9,12 @@ let estado = 'desconectado';
 let qrImageBase64 = null;
 let qrExpiraEn = null;
 let io = null;
+let dbPool = null;
 let reconnectTimer = null;
 let qrTimer = null;
+let authStore = null; // guarda { saveCreds, clearAuth } de la sesión activa
 
-const logger = pino({ level: 'silent' });
-const SESSION_DIR = path.join(os.tmpdir(), 'materiales-vera-whatsapp');
+const logger = pino({ level: process.env.BAILEYS_LOG_LEVEL || 'error' });
 
 const CODIGOS_TERMINALES = [
   DisconnectReason.loggedOut,
@@ -25,6 +24,11 @@ const CODIGOS_TERMINALES = [
 
 function configurarSocket(socketIo) {
   io = socketIo;
+}
+
+// Debe llamarse una vez que el pool de MySQL/TiDB esté creado en server.js
+function configurarDB(pool) {
+  dbPool = pool;
 }
 
 function obtenerEstado() {
@@ -41,16 +45,22 @@ function limpiarSock() {
     reconnectTimer = null;
   }
   if (sock) {
-    try { sock.end(); } catch {}
+    try { sock.end(); } catch { }
     sock = null;
   }
 }
 
 async function eliminarSesion() {
   try {
-    await fs.rm(SESSION_DIR, { recursive: true, force: true });
-    console.log('[WhatsApp] Carpeta de sesión eliminada.');
-  } catch {}
+    if (authStore) {
+      await authStore.clearAuth();
+    } else if (dbPool) {
+      await dbPool.query('DELETE FROM whatsapp_auth');
+    }
+    console.log('[WhatsApp] Sesión eliminada de la base de datos.');
+  } catch (e) {
+    console.error('[WhatsApp] Error eliminando sesión:', e.message);
+  }
 }
 
 function resetearEstado() {
@@ -75,9 +85,9 @@ function iniciarTimerQR() {
 async function cerrarSesion() {
   const estabaConectado = estado === 'conectado';
   if (estabaConectado && sock) {
-    try { await sock.logout(); } catch {}
+    try { await sock.logout(); } catch { }
   } else if (sock) {
-    try { sock.end(); } catch {}
+    try { sock.end(); } catch { }
   }
   resetearEstado();
   await eliminarSesion();
@@ -85,6 +95,10 @@ async function cerrarSesion() {
 }
 
 async function iniciarSesion() {
+  if (!dbPool) {
+    throw new Error('whatsapp.configurarDB(pool) no fue llamado antes de iniciarSesion()');
+  }
+
   if (sock && (estado === 'qr_pendiente' || estado === 'conectado')) {
     return;
   }
@@ -95,8 +109,9 @@ async function iniciarSesion() {
   qrExpiraEn = null;
   emitirEstado();
 
-  const sessionDir = path.join(os.tmpdir(), 'materiales-vera-whatsapp');
-  const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+  const { state, saveCreds, clearAuth } = await useMySQLAuthState(dbPool);
+  authStore = { saveCreds, clearAuth };
+
   const { version } = await fetchLatestBaileysVersion();
 
   sock = makeWASocket({
@@ -105,11 +120,11 @@ async function iniciarSesion() {
     logger,
     printQRInTerminal: false,
     browser: Browsers.ubuntu('Materiales Vera'),
+    connectTimeoutMs: 60000,
+    defaultQueryTimeoutMs: 60000,
   });
 
-  sock.ev.on('creds.update', async () => {
-    await saveCreds();
-  });
+  sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
@@ -171,26 +186,54 @@ function cancelarSesion() {
   return true;
 }
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function enviarMensaje(numero, texto) {
   if (estado !== 'conectado' || !sock) {
     throw new Error('WhatsApp no está conectado');
   }
 
-  const jid = numero.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+  const limpio = numero.replace(/[^0-9]/g, '');
+  if (limpio.length < 10 || limpio.length > 15) {
+    throw new Error('Número inválido: ' + numero);
+  }
+
+  const jid = limpio + '@s.whatsapp.net';
   await sock.sendMessage(jid, { text: texto });
 }
 
+// Envía a varios destinatarios con espera aleatoria entre cada uno
+// para no disparar detección de spam por ráfagas de mensajes.
+async function enviarMensajesEnLote(destinatarios, { minMs = 2000, maxMs = 5000 } = {}) {
+  const resultados = [];
+  for (const { numero, texto } of destinatarios) {
+    try {
+      await enviarMensaje(numero, texto);
+      resultados.push({ numero, ok: true });
+    } catch (e) {
+      resultados.push({ numero, ok: false, error: e.message });
+    }
+    await delay(minMs + Math.random() * (maxMs - minMs));
+  }
+  return resultados;
+}
+
+// Solo a la sala de admins autenticados por socket (ver socket.io auth en server.js)
 function emitirEstado() {
   if (io) {
-    io.emit('whatsapp-status', obtenerEstado());
+    io.to('admin-room').emit('whatsapp-status', obtenerEstado());
   }
 }
 
 module.exports = {
   configurarSocket,
+  configurarDB,
   obtenerEstado,
   iniciarSesion,
   cancelarSesion,
   cerrarSesion,
   enviarMensaje,
+  enviarMensajesEnLote,
 };

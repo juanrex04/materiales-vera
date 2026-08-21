@@ -50,6 +50,7 @@ cypress/screenshots/
 # WhatsApp (puppeteer)
 .wwebjs_cache/
 whatsapp-sesion/
+whatsapp-session/
 
 # Private docs
 **/GUIA_RENDER.md

@@ -29,6 +29,30 @@ const io = new Server(server, {
     credentials: true
   }
 });
+
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error('Token requerido'));
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.rol !== 'Admin') return next(new Error('No autorizado'));
+
+    socket.data.usuario = decoded;
+    next();
+  } catch (e) {
+    next(new Error('Token inválido o expirado'));
+  }
+});
+
+io.on('connection', (socket) => {
+  socket.join('admin-room');
+  console.log(`[Socket] Admin conectado: ${socket.data.usuario.nombre}`);
+  socket.on('disconnect', () => {
+    console.log(`[Socket] Admin desconectado: ${socket.data.usuario.nombre}`);
+  });
+});
+
 whatsapp.configurarSocket(io);
 const PORT = process.env.PORT || 3000;
 
@@ -100,6 +124,7 @@ const pool = mysql.createPool({
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
 });
 
+whatsapp.configurarDB(pool); 
 // Health check para UptimeRobot y Render (no requiere token)
 app.get('/health', async (req, res) => {
   try {
@@ -150,7 +175,7 @@ const loginLimiter = rateLimit({
   message: { error: 'Demasiados intentos. Intente de nuevo en 5 minutos.' }
 })
 
-app.post('/api/login',loginLimiter, [
+app.post('/api/login', loginLimiter, [
   body('documento')
     .trim()
     .stripLow()
@@ -1051,7 +1076,7 @@ app.delete('/api/admin/notificaciones-config/:id', verificarToken, esAdmin, [
 // ==========================================
 // CRON: Alertas WhatsApp diarias (7:00 AM)
 // ==========================================
-cron.schedule('0 7 * * *', async () => {
+cron.schedule('55 23 * * *', async () => {
   console.log('[Cron] Iniciando revisión de alertas WhatsApp...');
   const estadoWA = whatsapp.obtenerEstado();
   if (estadoWA.estado !== 'conectado') {
@@ -1121,21 +1146,27 @@ cron.schedule('0 7 * * *', async () => {
       return `• ${a.tipo} vehículo ${a.placa} ${textoDias}`;
     });
 
-    const texto = `⚠️ *Materiales Vera - Alerta Documentos*\n\n${lineas.join('\n')}\n\nPor favor tome las acciones necesarias a la brevedad.`;
+    const texto = `*Materiales Vera - Alerta Documentos*\n\n${lineas.join('\n')}\n\nPor favor tome las acciones necesarias a la brevedad.`;
 
-    for (const dest of destinatarios) {
-      try {
-        await whatsapp.enviarMensaje(dest.telefono, texto);
-        console.log(`[Cron] Mensaje enviado a ${dest.nombre} (${dest.telefono})`);
-        for (const alerta of alertas) {
-          await pool.query(
-            'INSERT IGNORE INTO notificaciones_enviadas (vehiculo_id, tipo_documento, fecha_notificacion) VALUES (?, ?, CURDATE())',
-            [alerta.vehiculo_id, alerta.tipo]
-          );
-        }
-      } catch (err) {
-        console.error(`[Cron] Error enviando a ${dest.telefono}:`, err.message);
+    const resultadosCron = await whatsapp.enviarMensajesEnLote(
+      destinatarios.map(d => ({ numero: d.telefono, texto }))
+    );
+
+    for (const r of resultadosCron) {
+      if (r.ok) {
+        console.log(`[Cron] Mensaje enviado a ${r.numero}`);
+      } else {
+        console.error(`[Cron] Error enviando a ${r.numero}:`, r.error);
       }
+    }
+
+    // El registro de notificaciones_enviadas se hace una sola vez
+    // (antes, si tenías varios destinatarios, insertabas el mismo registro N veces)
+    for (const alerta of alertas) {
+      await pool.query(
+        'INSERT IGNORE INTO notificaciones_enviadas (vehiculo_id, tipo_documento, fecha_notificacion) VALUES (?, ?, CURDATE())',
+        [alerta.vehiculo_id, alerta.tipo]
+      );
     }
 
     console.log(`[Cron] Procesadas ${alertas.length} alertas para ${destinatarios.length} destinatarios.`);

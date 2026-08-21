@@ -87,16 +87,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { io } from 'socket.io-client';
+import { ref, computed, watch, onUnmounted } from 'vue';
+import { useWhatsappStatus } from '@/composables/useWhatsappStatus';
 import { API_URL } from '@/config';
 import { mostrarToast } from '@/utils/alertas';
 
-const estado = ref('desconectado');
-const qrImage = ref(null);
-const qrExpiraEn = ref(null);
+// Estado global: sobrevive a cambios de ruta, ya no se resetea al salir/entrar
+const { estado, qrImage, qrExpiraEn } = useWhatsappStatus();
+
 const conectando = ref(false);
-const socket = ref(null);
 const telefonoPrueba = ref('');
 const enviandoPrueba = ref(false);
 const mensajePrueba = ref('');
@@ -106,6 +105,8 @@ const cancelando = ref(false);
 const cerrando = ref(false);
 
 let countdownInterval = null;
+const qrCountdown = ref(0);
+const qrCountdownPercent = ref(0);
 
 const estadoClase = computed(() => ({
   'conectado': estado.value === 'conectado',
@@ -120,9 +121,6 @@ const estadoTexto = computed(() => {
     default: return 'Desconectado';
   }
 });
-
-const qrCountdown = ref(0);
-const qrCountdownPercent = ref(0);
 
 function startCountdown() {
   stopCountdown();
@@ -142,36 +140,29 @@ function stopCountdown() {
   }
 }
 
-function manejarEstado(data) {
-  estado.value = data.estado;
-  qrImage.value = data.qr;
-  qrExpiraEn.value = data.expiraEn;
+// Como el estado ahora es global y puede llegar ya en 'qr_pendiente' al
+// entrar a esta vista (por ejemplo si lo dejaste pendiente en otra pestaña
+// o navegación), observamos los cambios para arrancar/parar el countdown
+// en vez de hacerlo solo una vez en onMounted.
+watch(
+  () => estado.value,
+  (nuevoEstado) => {
+    if (nuevoEstado === 'qr_pendiente' && qrExpiraEn.value) {
+      startCountdown();
+    } else {
+      stopCountdown();
+    }
 
-  if (data.estado === 'qr_pendiente' && data.expiraEn) {
-    startCountdown();
-  } else {
-    stopCountdown();
-  }
-
-  if (data.estado === 'conectado') { conectando.value = false; cancelando.value = false; }
-  if (data.estado === 'desconectado') { conectando.value = false; cancelando.value = false; }
-}
-
-onMounted(() => {
-  socket.value = io(API_URL, { transports: ['websocket', 'polling'] });
-  socket.value.on('whatsapp-status', manejarEstado);
-
-  fetch(`${API_URL}/api/admin/whatsapp-status`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-  })
-    .then(r => r.json())
-    .then(manejarEstado)
-    .catch(() => {});
-});
+    if (nuevoEstado === 'conectado') { conectando.value = false; cancelando.value = false; }
+    if (nuevoEstado === 'desconectado') { conectando.value = false; cancelando.value = false; }
+  },
+  { immediate: true } // corre también al montar, por si ya venía en qr_pendiente
+);
 
 onUnmounted(() => {
   stopCountdown();
-  if (socket.value) socket.value.disconnect();
+  // El socket YA NO se desconecta aquí: es global (ver useWhatsappStatus.js)
+  // y debe seguir vivo aunque salgas de esta vista.
 });
 
 async function conectar() {
