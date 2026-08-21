@@ -145,9 +145,9 @@ function stopCountdown() {
 // o navegación), observamos los cambios para arrancar/parar el countdown
 // en vez de hacerlo solo una vez en onMounted.
 watch(
-  () => estado.value,
-  (nuevoEstado) => {
-    if (nuevoEstado === 'qr_pendiente' && qrExpiraEn.value) {
+  [() => estado.value, () => qrExpiraEn.value],
+  ([nuevoEstado, nuevaExpiraEn]) => {
+    if (nuevoEstado === 'qr_pendiente' && nuevaExpiraEn) {
       startCountdown();
     } else {
       stopCountdown();
@@ -156,7 +156,7 @@ watch(
     if (nuevoEstado === 'conectado') { conectando.value = false; cancelando.value = false; }
     if (nuevoEstado === 'desconectado') { conectando.value = false; cancelando.value = false; }
   },
-  { immediate: true } // corre también al montar, por si ya venía en qr_pendiente
+  { immediate: true }
 );
 
 onUnmounted(() => {

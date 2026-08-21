@@ -227,11 +227,27 @@ function emitirEstado() {
   }
 }
 
+async function autoReconectar() {
+  if (!dbPool || process.env.NODE_ENV === 'test') return;
+  try {
+    const [filas] = await dbPool.query("SELECT id FROM whatsapp_auth WHERE id = 'creds' LIMIT 1");
+    if (filas.length > 0) {
+      console.log('[WhatsApp] Sesión previa encontrada en BD, reconectando automáticamente...');
+      await iniciarSesion();
+    } else {
+      console.log('[WhatsApp] No hay sesión previa, esperando conexión manual.');
+    }
+  } catch (e) {
+    console.error('[WhatsApp] Error al verificar sesión previa:', e.message);
+  }
+}
+
 module.exports = {
   configurarSocket,
   configurarDB,
   obtenerEstado,
   iniciarSesion,
+  autoReconectar,
   cancelarSesion,
   cerrarSesion,
   enviarMensaje,

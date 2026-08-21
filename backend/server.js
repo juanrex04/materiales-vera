@@ -47,10 +47,12 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   socket.join('admin-room');
-  console.log(`[Socket] Admin conectado: ${socket.data.usuario.nombre}`);
-  socket.on('disconnect', () => {
-    console.log(`[Socket] Admin desconectado: ${socket.data.usuario.nombre}`);
-  });
+  if (process.env.VERBOSE_SOCKETS === 'true') {
+    console.log(`[Socket] Admin conectado: ${socket.data.usuario.nombre}`);
+    socket.on('disconnect', () => {
+      console.log(`[Socket] Admin desconectado: ${socket.data.usuario.nombre}`);
+    });
+  }
 });
 
 whatsapp.configurarSocket(io);
@@ -124,7 +126,8 @@ const pool = mysql.createPool({
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
 });
 
-whatsapp.configurarDB(pool); 
+whatsapp.configurarDB(pool);
+whatsapp.autoReconectar();
 // Health check para UptimeRobot y Render (no requiere token)
 app.get('/health', async (req, res) => {
   try {
@@ -1076,7 +1079,7 @@ app.delete('/api/admin/notificaciones-config/:id', verificarToken, esAdmin, [
 // ==========================================
 // CRON: Alertas WhatsApp diarias (7:00 AM)
 // ==========================================
-cron.schedule('12 08 * * *', async () => {
+cron.schedule('00 09 * * *', async () => {
   console.log('[Cron] Iniciando revisión de alertas WhatsApp...');
   const estadoWA = whatsapp.obtenerEstado();
   if (estadoWA.estado !== 'conectado') {
