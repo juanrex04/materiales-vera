@@ -83,6 +83,4 @@ const obtenerAlertas = async () => {
   } catch (error) { errorMensaje.value = error.message; }
   finally { cargando.value = false; }
 };
-
-const cerrarSesion = () => { localStorage.clear(); router.push('/'); };
 </script>

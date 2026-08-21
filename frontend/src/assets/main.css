@@ -733,6 +733,10 @@ td:last-child {
   text-align: left;
 }
 
+.form-vertical .telefono-input-group {
+  flex-direction: row;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1193,6 +1197,32 @@ textarea:focus {
   background-color: #fee2e2;
   border-color: #ef4444;
   box-shadow: 0 2px 4px rgba(239, 68, 68, 0.18);
+}
+
+/* Variante: Probar (Azul gradiente) */
+.btn-action.btn-test {
+  background: linear-gradient(135deg, var(--primary-blue), var(--primary-hover));
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+}
+
+.btn-action.btn-test svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.btn-action.btn-test:hover {
+  background: linear-gradient(135deg, var(--primary-hover), #1e40af);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.btn-action.btn-test:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Variante: Reset / Clave (Índigo suave) */
@@ -2552,6 +2582,55 @@ a.btn-nav {
 
 .mensaje-feedback.error {
   color: #dc2626;
+}
+
+.hora-config {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.hora-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+  flex: 0 0 auto;
+}
+
+.hora-input-group svg {
+  color: var(--primary-blue);
+  flex-shrink: 0;
+}
+
+.hora-input {
+  border: none;
+  background: transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.hora-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+@media (max-width: 480px) {
+  .hora-config {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hora-input-group {
+    justify-content: center;
+  }
 }
 
 /* ===== Notificaciones Config ===== */

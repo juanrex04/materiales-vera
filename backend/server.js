@@ -128,6 +128,124 @@ const pool = mysql.createPool({
 
 whatsapp.configurarDB(pool);
 whatsapp.autoReconectar();
+
+let cronTarea = null;
+
+function iniciarCron(hora) {
+  if (cronTarea) { cronTarea.stop(); cronTarea = null; }
+  const [h, m] = hora.split(':');
+  const expr = `${parseInt(m)} ${parseInt(h)} * * *`;
+  cronTarea = cron.schedule(expr, async () => {
+    console.log(`[Cron] Iniciando revisión de alertas WhatsApp (${hora})...`);
+    const estadoWA = whatsapp.obtenerEstado();
+    if (estadoWA.estado !== 'conectado') {
+      console.log('[Cron] WhatsApp no conectado, saltando envío.');
+      return;
+    }
+
+    try {
+      const fechaActual = new Date();
+      const [vehiculos] = await pool.query('SELECT * FROM vehiculos');
+
+      const alertas = [];
+      for (const v of vehiculos) {
+        const documentos = [
+          { tipo: 'SOAT', fecha: new Date(v.fecha_soat), umbral: 1 },
+          { tipo: 'TECNOMECANICA', fecha: new Date(v.fecha_tecnomecanica), umbral: 1 },
+        ];
+
+        if (v.fecha_ultimo_cambio_aceite) {
+          const aceiteProximo = new Date(v.fecha_ultimo_cambio_aceite);
+          aceiteProximo.setMonth(aceiteProximo.getMonth() + 3);
+          documentos.push({ tipo: 'ACEITE', fecha: aceiteProximo, umbral: 1 });
+        } else {
+          documentos.push({ tipo: 'ACEITE', fecha: null, umbral: 1 });
+        }
+
+        for (const doc of documentos) {
+          let diasRestantes;
+          if (doc.fecha === null) {
+            diasRestantes = -999;
+          } else {
+            diasRestantes = Math.ceil((doc.fecha - fechaActual) / (1000 * 60 * 60 * 24));
+          }
+
+          if (diasRestantes <= doc.umbral) {
+            const [existe] = await pool.query(
+              'SELECT id FROM notificaciones_enviadas WHERE vehiculo_id = ? AND tipo_documento = ? AND fecha_notificacion = CURDATE()',
+              [v.id, doc.tipo]
+            );
+            if (existe.length === 0) {
+              alertas.push({ vehiculo_id: v.id, placa: v.placa, tipo: doc.tipo, dias: diasRestantes });
+            }
+          }
+        }
+      }
+
+      if (alertas.length === 0) {
+        console.log('[Cron] No hay alertas pendientes.');
+        return;
+      }
+
+      const [destinatarios] = await pool.query(
+        'SELECT nc.id, nc.telefono, c.nombre FROM notificaciones_config nc JOIN colaboradores c ON c.id = nc.colaborador_id WHERE nc.recibir_alertas = 1'
+      );
+
+      if (destinatarios.length === 0) {
+        console.log('[Cron] No hay destinatarios configurados.');
+        return;
+      }
+
+      const lineas = alertas.map(a => {
+        const textoDias = a.dias < 0
+          ? `venció hace ${Math.abs(a.dias)} día(s)`
+          : a.dias === 0
+            ? 'vence HOY'
+            : `vence en ${a.dias} día(s)`;
+        return `• ${a.tipo} vehículo ${a.placa} ${textoDias}`;
+      });
+
+      const texto = `*Materiales Vera - Alerta Documentos*\n\n${lineas.join('\n')}\n\nPor favor tome las acciones necesarias a la brevedad.`;
+
+      const resultadosCron = await whatsapp.enviarMensajesEnLote(
+        destinatarios.map(d => ({ numero: d.telefono, texto }))
+      );
+
+      for (const r of resultadosCron) {
+        if (r.ok) {
+          console.log(`[Cron] Mensaje enviado a ${r.numero}`);
+        } else {
+          console.error(`[Cron] Error enviando a ${r.numero}:`, r.error);
+        }
+      }
+
+      for (const alerta of alertas) {
+        await pool.query(
+          'INSERT IGNORE INTO notificaciones_enviadas (vehiculo_id, tipo_documento, fecha_notificacion) VALUES (?, ?, CURDATE())',
+          [alerta.vehiculo_id, alerta.tipo]
+        );
+      }
+
+      console.log(`[Cron] Procesadas ${alertas.length} alertas para ${destinatarios.length} destinatarios.`);
+    } catch (error) {
+      console.error('[Cron] Error en revisión de alertas:', error);
+    }
+  });
+  console.log(`[Cron] Programado diariamente a las ${hora}.`);
+}
+
+(async () => {
+  try {
+    const [filas] = await pool.query('SELECT hora_reporte, activo FROM configuracion_whatsapp WHERE id = 1');
+    if (filas.length > 0 && filas[0].activo) {
+      iniciarCron(filas[0].hora_reporte);
+    } else {
+      iniciarCron('09:00');
+    }
+  } catch {
+    iniciarCron('09:00');
+  }
+})();
 // Health check para UptimeRobot y Render (no requiere token)
 app.get('/health', async (req, res) => {
   try {
@@ -1077,104 +1195,40 @@ app.delete('/api/admin/notificaciones-config/:id', verificarToken, esAdmin, [
 });
 
 // ==========================================
-// CRON: Alertas WhatsApp diarias (7:00 AM)
+// ENDPOINTS: Configuración WhatsApp
 // ==========================================
-cron.schedule('00 09 * * *', async () => {
-  console.log('[Cron] Iniciando revisión de alertas WhatsApp...');
-  const estadoWA = whatsapp.obtenerEstado();
-  if (estadoWA.estado !== 'conectado') {
-    console.log('[Cron] WhatsApp no conectado, saltando envío.');
-    return;
+app.get('/api/admin/configuracion-whatsapp', verificarToken, esAdmin, async (req, res) => {
+  try {
+    const [filas] = await pool.query('SELECT hora_reporte, activo FROM configuracion_whatsapp WHERE id = 1');
+    if (filas.length === 0) {
+      return res.json({ hora_reporte: '09:00', activo: true });
+    }
+    res.json({ hora_reporte: filas[0].hora_reporte, activo: !!filas[0].activo });
+  } catch (error) {
+    console.error('[Config] Error leyendo configuración:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+app.put('/api/admin/configuracion-whatsapp', verificarToken, esAdmin, [
+  body('hora_reporte').matches(/^([01]\d|2[0-3]):[0-5]\d$/).withMessage('Formato de hora inválido (HH:MM)'),
+], async (req, res) => {
+  const errores = validationResult(req);
+  if (!errores.isEmpty()) {
+    return res.status(400).json({ error: errores.array()[0].msg });
   }
 
   try {
-    const fechaActual = new Date();
-    const [vehiculos] = await pool.query('SELECT * FROM vehiculos');
-
-    const alertas = [];
-    for (const v of vehiculos) {
-      const documentos = [
-        { tipo: 'SOAT', fecha: new Date(v.fecha_soat), umbral: 1 },
-        { tipo: 'TECNOMECANICA', fecha: new Date(v.fecha_tecnomecanica), umbral: 1 },
-      ];
-
-      if (v.fecha_ultimo_cambio_aceite) {
-        const aceiteProximo = new Date(v.fecha_ultimo_cambio_aceite);
-        aceiteProximo.setMonth(aceiteProximo.getMonth() + 3);
-        documentos.push({ tipo: 'ACEITE', fecha: aceiteProximo, umbral: 1 });
-      } else {
-        documentos.push({ tipo: 'ACEITE', fecha: null, umbral: 1 });
-      }
-
-      for (const doc of documentos) {
-        let diasRestantes;
-        if (doc.fecha === null) {
-          diasRestantes = -999;
-        } else {
-          diasRestantes = Math.ceil((doc.fecha - fechaActual) / (1000 * 60 * 60 * 24));
-        }
-
-        if (diasRestantes <= doc.umbral) {
-          const [existe] = await pool.query(
-            'SELECT id FROM notificaciones_enviadas WHERE vehiculo_id = ? AND tipo_documento = ? AND fecha_notificacion = CURDATE()',
-            [v.id, doc.tipo]
-          );
-          if (existe.length === 0) {
-            alertas.push({ vehiculo_id: v.id, placa: v.placa, tipo: doc.tipo, dias: diasRestantes });
-          }
-        }
-      }
-    }
-
-    if (alertas.length === 0) {
-      console.log('[Cron] No hay alertas pendientes.');
-      return;
-    }
-
-    const [destinatarios] = await pool.query(
-      'SELECT nc.id, nc.telefono, c.nombre FROM notificaciones_config nc JOIN colaboradores c ON c.id = nc.colaborador_id WHERE nc.recibir_alertas = 1'
+    const { hora_reporte } = req.body;
+    await pool.query(
+      'INSERT INTO configuracion_whatsapp (id, hora_reporte) VALUES (1, ?) ON DUPLICATE KEY UPDATE hora_reporte = ?',
+      [hora_reporte, hora_reporte]
     );
-
-    if (destinatarios.length === 0) {
-      console.log('[Cron] No hay destinatarios configurados.');
-      return;
-    }
-
-    const lineas = alertas.map(a => {
-      const textoDias = a.dias < 0
-        ? `venció hace ${Math.abs(a.dias)} día(s)`
-        : a.dias === 0
-          ? 'vence HOY'
-          : `vence en ${a.dias} día(s)`;
-      return `• ${a.tipo} vehículo ${a.placa} ${textoDias}`;
-    });
-
-    const texto = `*Materiales Vera - Alerta Documentos*\n\n${lineas.join('\n')}\n\nPor favor tome las acciones necesarias a la brevedad.`;
-
-    const resultadosCron = await whatsapp.enviarMensajesEnLote(
-      destinatarios.map(d => ({ numero: d.telefono, texto }))
-    );
-
-    for (const r of resultadosCron) {
-      if (r.ok) {
-        console.log(`[Cron] Mensaje enviado a ${r.numero}`);
-      } else {
-        console.error(`[Cron] Error enviando a ${r.numero}:`, r.error);
-      }
-    }
-
-    // El registro de notificaciones_enviadas se hace una sola vez
-    // (antes, si tenías varios destinatarios, insertabas el mismo registro N veces)
-    for (const alerta of alertas) {
-      await pool.query(
-        'INSERT IGNORE INTO notificaciones_enviadas (vehiculo_id, tipo_documento, fecha_notificacion) VALUES (?, ?, CURDATE())',
-        [alerta.vehiculo_id, alerta.tipo]
-      );
-    }
-
-    console.log(`[Cron] Procesadas ${alertas.length} alertas para ${destinatarios.length} destinatarios.`);
+    iniciarCron(hora_reporte);
+    res.json({ mensaje: 'Hora de reporte actualizada', hora_reporte });
   } catch (error) {
-    console.error('[Cron] Error en revisión de alertas:', error);
+    console.error('[Config] Error actualizando configuración:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 

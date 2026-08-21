@@ -14,7 +14,33 @@ let reconnectTimer = null;
 let qrTimer = null;
 let authStore = null; // guarda { saveCreds, clearAuth } de la sesión activa
 
-const logger = pino({ level: process.env.BAILEYS_LOG_LEVEL || 'error' });
+const _pino = pino({ level: process.env.BAILEYS_LOG_LEVEL || 'warn' });
+
+function wrapLogger(instance) {
+  return new Proxy(instance, {
+    get(target, prop) {
+      if (prop === 'error') {
+        return function (...args) {
+          const firstArg = args[0];
+          if (firstArg && firstArg.err && firstArg.err.type === 'MessageCounterError') {
+            target.warn.apply(target, args);
+          } else {
+            target.error.apply(target, args);
+          }
+        };
+      }
+      if (prop === 'child') {
+        return function (...childArgs) {
+          return wrapLogger(target.child.apply(target, childArgs));
+        };
+      }
+      const val = target[prop];
+      return typeof val === 'function' ? val.bind(target) : val;
+    }
+  });
+}
+
+const logger = wrapLogger(_pino);
 
 const CODIGOS_TERMINALES = [
   DisconnectReason.loggedOut,
@@ -170,6 +196,9 @@ async function iniciarSesion() {
         }, 0);
       } else {
         console.log('[WhatsApp] Conexión cerrada (StatusCode:', statusCode, '), reconectando en 3s...');
+        estado = 'desconectado';
+        sock = null;
+        emitirEstado();
         reconnectTimer = setTimeout(() => {
           if (estado !== 'desconectado') iniciarSesion();
         }, 3000);
@@ -201,14 +230,28 @@ async function enviarMensaje(numero, texto) {
   }
 
   const jid = limpio + '@s.whatsapp.net';
-  await sock.sendMessage(jid, { text: texto });
+  try {
+    await sock.sendMessage(jid, { text: texto });
+  } catch (e) {
+    console.warn('[WhatsApp] Primer intento falló, reintentando en 5s...', e.message);
+    await delay(5000);
+    if (estado !== 'conectado' || !sock) {
+      throw new Error('WhatsApp se desconectó durante el reintento');
+    }
+    await sock.sendMessage(jid, { text: texto });
+  }
 }
 
 // Envía a varios destinatarios con espera aleatoria entre cada uno
 // para no disparar detección de spam por ráfagas de mensajes.
-async function enviarMensajesEnLote(destinatarios, { minMs = 2000, maxMs = 5000 } = {}) {
+async function enviarMensajesEnLote(destinatarios, { minMs = 3000, maxMs = 8000 } = {}) {
   const resultados = [];
   for (const { numero, texto } of destinatarios) {
+    if (estado !== 'conectado' || !sock) {
+      console.warn('[WhatsApp] Conexión perdida, abortando lote restante.');
+      resultados.push({ numero, ok: false, error: 'Conexión perdida durante envío' });
+      continue;
+    }
     try {
       await enviarMensaje(numero, texto);
       resultados.push({ numero, ok: true });

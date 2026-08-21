@@ -157,3 +157,17 @@ ON DUPLICATE KEY UPDATE nombre = VALUES(nombre);
 INSERT INTO colaboradores (documento, nombre, password, rol_id, licencia_conducir, debe_cambiar_password)
 VALUES ('11111', 'Administrador', '$2b$10$39p50K5ENpGM6812WkotHOpGDnNR6FtYZrkadZQ1EenAo1XVUmafa', 1, NULL, TRUE)
 ON DUPLICATE KEY UPDATE documento = documento;
+
+-- ============================================================
+-- TABLA: configuracion_whatsapp
+-- Almacena ajustes del sistema de alertas WhatsApp
+-- ============================================================
+CREATE TABLE IF NOT EXISTS configuracion_whatsapp (
+  `id` int NOT NULL DEFAULT 1,
+  `hora_reporte` varchar(5) NOT NULL DEFAULT '09:00',
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT IGNORE INTO configuracion_whatsapp (id, hora_reporte, activo) VALUES (1, '09:00', 1);

@@ -40,6 +40,15 @@
                   </svg>
                   <span>Editar</span>
                 </button>
+                <button
+                  class="btn-action btn-test"
+                  :disabled="!dest.recibir_alertas || enviandoPruebaId === dest.id"
+                  @click="enviarPrueba(dest.telefono, dest.id, dest.nombre)"
+                  title="Enviar mensaje de prueba"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  <span>{{ enviandoPruebaId === dest.id ? '...' : 'Probar' }}</span>
+                </button>
                 <button class="btn-action btn-delete" @click="eliminar(dest.id)" title="Eliminar destinatario">
                   <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -118,6 +127,9 @@ const cargando = ref(true);
 const modalVisible = ref(false);
 const editando = ref(null);
 const guardando = ref(false);
+const enviandoPruebaId = ref(null);
+
+const emit = defineEmits(['error']);
 
 const formulario = ref({
   colaborador_id: '',
@@ -134,15 +146,21 @@ async function cargarDestinatarios() {
   cargando.value = true;
   try {
     destinatarios.value = await peticion('/api/admin/notificaciones-config');
-  } catch { /* silenciar */ }
+  } catch (error) {
+    emit('error', error.message);
+  }
   finally { cargando.value = false; }
 }
 
-async function cargarColaboradores() {
+async function cargarColaboradores(filtroNotificacion = true) {
   try {
-    const datos = await peticion('/api/admin/colaboradores?porPagina=100&rol=Admin&sinNotificacion=1');
+    let url = '/api/admin/colaboradores?porPagina=100&rol=Admin';
+    if (filtroNotificacion) url += '&sinNotificacion=1';
+    const datos = await peticion(url);
     colaboradores.value = datos.datos || datos;
-  } catch { /* silenciar */ }
+  } catch (error) {
+    emit('error', error.message);
+  }
 }
 
 function abrirFormulario(dest = null) {
@@ -153,6 +171,7 @@ function abrirFormulario(dest = null) {
   } else {
     formulario.value = { colaborador_id: '', telefono: '', recibir_alertas: true };
   }
+  cargarColaboradores(!dest);
   modalVisible.value = true;
 }
 
@@ -177,6 +196,7 @@ async function guardar() {
     await cargarDestinatarios();
   } catch (error) {
     mostrarToast('error', 'No se pudo guardar', error.message);
+    emit('error', error.message);
   } finally {
     guardando.value = false;
   }
@@ -191,6 +211,23 @@ async function eliminar(id) {
     await cargarDestinatarios();
   } catch (error) {
     mostrarToast('error', 'No se pudo eliminar', error.message);
+    emit('error', error.message);
+  }
+}
+
+async function enviarPrueba(telefono, id, nombre) {
+  enviandoPruebaId.value = id;
+  try {
+    await peticion('/api/admin/whatsapp-test', {
+      metodo: 'POST',
+      cuerpo: { telefono },
+    });
+    mostrarToast('success', 'Mensaje de prueba enviado', `Se envió a ${nombre}`);
+  } catch (error) {
+    mostrarToast('error', 'No se pudo enviar', error.message);
+    emit('error', error.message);
+  } finally {
+    enviandoPruebaId.value = null;
   }
 }
 </script>

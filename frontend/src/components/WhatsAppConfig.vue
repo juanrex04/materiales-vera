@@ -33,10 +33,10 @@
         v-if="estado === 'conectado'"
         class="btn-cancel"
         :disabled="cerrando"
-        @click="cerrarSesion"
+        @click="desvincular"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        {{ cerrando ? 'Cerrando...' : 'Cerrar sesión' }}
+        {{ cerrando ? 'Desvinculando...' : 'Desvincular dispositivo' }}
       </button>
     </div>
 
@@ -55,27 +55,6 @@
     </div>
 
     <div v-if="estado === 'conectado'" class="test-section">
-      <h4>Enviar mensaje de prueba</h4>
-      <div class="test-form">
-        <div class="telefono-input-group">
-          <span class="telefono-prefix">+57</span>
-          <input
-            v-model="telefonoPrueba"
-            type="tel"
-            placeholder="3001234567"
-            class="input-telefono"
-            maxlength="10"
-          />
-        </div>
-        <button class="btn-primary" :disabled="enviandoPrueba || !telefonoPrueba" @click="enviarPrueba">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          {{ enviandoPrueba ? 'Enviando...' : 'Enviar prueba' }}
-        </button>
-      </div>
-      <p v-if="mensajePrueba" :class="['mensaje-feedback', tipoMensaje]">{{ mensajePrueba }}</p>
-    </div>
-
-    <div v-if="estado === 'conectado'" class="test-section">
       <h4>Alertas de documentos</h4>
       <p class="descripcion-seccion">Envía manualmente las alertas de documentos vencidos o próximos a vencer a todos los destinatarios configurados.</p>
       <button class="btn-primary" :disabled="enviandoAlertas" @click="enviarAlertas">
@@ -83,26 +62,49 @@
         {{ enviandoAlertas ? 'Enviando...' : 'Enviar alertas de documentos' }}
       </button>
     </div>
+
+    <div v-if="estado === 'conectado'" class="test-section">
+      <h4>Reporte automático</h4>
+      <p class="descripcion-seccion">Configura la hora diaria en la que se enviarán las alertas de documentos vencidos o próximos a vencer.</p>
+      <div class="hora-config">
+        <div class="hora-input-group">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <input
+            v-model="horaReporte"
+            type="time"
+            class="hora-input"
+          />
+        </div>
+        <button
+          class="btn-primary"
+          :disabled="guardandoHora || horaReporte === horaOriginal"
+          @click="guardarHora"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          {{ guardandoHora ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useWhatsappStatus } from '@/composables/useWhatsappStatus';
 import { API_URL } from '@/config';
-import { mostrarToast } from '@/utils/alertas';
+import { mostrarToast, confirmarAccion } from '@/utils/alertas';
 
 // Estado global: sobrevive a cambios de ruta, ya no se resetea al salir/entrar
 const { estado, qrImage, qrExpiraEn } = useWhatsappStatus();
+const emit = defineEmits(['error']);
 
 const conectando = ref(false);
-const telefonoPrueba = ref('');
-const enviandoPrueba = ref(false);
-const mensajePrueba = ref('');
-const tipoMensaje = ref('');
 const enviandoAlertas = ref(false);
 const cancelando = ref(false);
 const cerrando = ref(false);
+const horaReporte = ref('09:00');
+const horaOriginal = ref('09:00');
+const guardandoHora = ref(false);
 
 let countdownInterval = null;
 const qrCountdown = ref(0);
@@ -161,9 +163,45 @@ watch(
 
 onUnmounted(() => {
   stopCountdown();
-  // El socket YA NO se desconecta aquí: es global (ver useWhatsappStatus.js)
-  // y debe seguir vivo aunque salgas de esta vista.
 });
+
+onMounted(async () => {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/configuracion-whatsapp`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    const data = await res.json();
+    if (data.hora_reporte) {
+      horaReporte.value = data.hora_reporte;
+      horaOriginal.value = data.hora_reporte;
+    }
+  } catch {
+    emit('error', 'No se pudo conectar con el servidor. Verifique su conexión a internet.');
+  }
+});
+
+async function guardarHora() {
+  guardandoHora.value = true;
+  try {
+    const res = await fetch(`${API_URL}/api/admin/configuracion-whatsapp`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ hora_reporte: horaReporte.value })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al guardar');
+    horaOriginal.value = horaReporte.value;
+    mostrarToast('success', 'Hora actualizada', `Las alertas se enviarán a las ${horaReporte.value}`);
+  } catch (error) {
+    mostrarToast('error', 'Error al guardar', error.message);
+    horaReporte.value = horaOriginal.value;
+  } finally {
+    guardandoHora.value = false;
+  }
+}
 
 async function conectar() {
   conectando.value = true;
@@ -174,6 +212,7 @@ async function conectar() {
     });
   } catch {
     conectando.value = false;
+    emit('error', 'No se pudo conectar con el servidor. Verifique su conexión a internet.');
   }
 }
 
@@ -185,12 +224,19 @@ async function cancelar() {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
   } catch {
+    emit('error', 'No se pudo conectar con el servidor. Verifique su conexión a internet.');
   } finally {
     cancelando.value = false;
   }
 }
 
-async function cerrarSesion() {
+async function desvincular() {
+  const confirmado = await confirmarAccion(
+    '¿Desvincular dispositivo?',
+    'Se cerrará la sesión de WhatsApp y tendrás que escanear un nuevo código QR para reconectar.'
+  );
+  if (!confirmado) return;
+
   cerrando.value = true;
   try {
     const res = await fetch(`${API_URL}/api/admin/whatsapp-logout`, {
@@ -198,36 +244,13 @@ async function cerrarSesion() {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error al cerrar sesión');
-    mostrarToast('info', 'Sesión cerrada', data.mensaje);
+    if (!res.ok) throw new Error(data.error || 'Error al desvincular');
+    mostrarToast('info', 'Dispositivo desvinculado', data.mensaje);
   } catch (error) {
-    mostrarToast('error', 'Error al cerrar sesión', error.message);
+    mostrarToast('error', 'Error al desvincular', error.message);
+    emit('error', error.message);
   } finally {
     cerrando.value = false;
-  }
-}
-
-async function enviarPrueba() {
-  enviandoPrueba.value = true;
-  mensajePrueba.value = '';
-  try {
-    const res = await fetch(`${API_URL}/api/admin/whatsapp-test`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify({ telefono: '+57' + telefonoPrueba.value })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error al enviar');
-    mensajePrueba.value = 'Mensaje enviado exitosamente ✓';
-    tipoMensaje.value = 'exito';
-  } catch (error) {
-    mensajePrueba.value = error.message;
-    tipoMensaje.value = 'error';
-  } finally {
-    enviandoPrueba.value = false;
   }
 }
 
@@ -243,6 +266,7 @@ async function enviarAlertas() {
     mostrarToast('success', data.mensaje, `${data.alertas} alerta(s) a ${data.destinatarios} destinatario(s)`);
   } catch (error) {
     mostrarToast('error', 'No se pudieron enviar las alertas', error.message);
+    emit('error', error.message);
   } finally {
     enviandoAlertas.value = false;
   }
