@@ -95,11 +95,11 @@
         </div>
 
         <div class="acciones-formulario">
-          <button type="button" class="btn-secondary" @click="modalVisible = false"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Cancelar</button>
           <button type="submit" class="btn-primary" :disabled="guardando">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             {{ guardando ? 'Guardando...' : 'Guardar' }}
           </button>
+          <button type="button" class="btn-edit" @click="modalVisible = false"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Cancelar</button>
         </div>
       </form>
     </BaseModal>
@@ -194,140 +194,3 @@ async function eliminar(id) {
   }
 }
 </script>
-
-<style scoped>
-.telefono-input-group {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.telefono-prefix {
-  padding: 0.5rem 0.75rem;
-  background: #f1f5f9;
-  color: #475569;
-  font-weight: 600;
-  font-size: 0.9rem;
-  border-right: 1px solid var(--border-color);
-  user-select: none;
-}
-
-.telefono-input-group input {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
-  border: none;
-  font-size: 0.9rem;
-  outline: none;
-}
-
-.toggle-label-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  font-weight: normal;
-}
-
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-  cursor: pointer;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  inset: 0;
-  background: #cbd5e1;
-  border-radius: 24px;
-  transition: background 0.25s ease;
-}
-
-.toggle-slider::before {
-  content: '';
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  left: 3px;
-  bottom: 3px;
-  background: white;
-  border-radius: 50%;
-  transition: transform 0.25s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-.toggle-switch input:checked + .toggle-slider {
-  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-}
-
-.toggle-switch input:checked + .toggle-slider::before {
-  transform: translateX(20px);
-}
-
-.toggle-texto {
-  font-size: 0.95rem;
-  color: #334155;
-}
-.badge-estatus-activo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.25rem 0.65rem;
-  border-radius: 9999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  background-color: #dcfce7;
-  color: #166534;
-  border: 1px solid #bbf7d0;
-}
-
-.badge-estatus-activo .dot-indicador {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: #22c55e;
-}
-
-.badge-estatus-inactivo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.25rem 0.65rem;
-  border-radius: 9999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  background-color: #f1f5f9;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
-}
-
-.badge-estatus-inactivo .dot-indicador {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: #94a3b8;
-}
-
-.acciones-formulario {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-}
-
-.cargando-texto {
-  text-align: center;
-  color: #64748b;
-  padding: 2rem;
-}
-</style>

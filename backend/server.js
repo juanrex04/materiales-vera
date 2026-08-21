@@ -862,6 +862,25 @@ app.post('/api/admin/whatsapp-connect', verificarToken, esAdmin, (req, res) => {
   res.json({ mensaje: 'Iniciando conexión...', estado: 'qr_pendiente' });
 });
 
+// Cancelar conexión WhatsApp (mientras se muestra QR)
+app.post('/api/admin/whatsapp-disconnect', verificarToken, esAdmin, (req, res) => {
+  const cancelado = whatsapp.cancelarSesion();
+  if (!cancelado) {
+    return res.status(400).json({ error: 'No hay conexión en progreso para cancelar.' });
+  }
+  res.json({ mensaje: 'Conexión cancelada', estado: 'desconectado' });
+});
+
+// Cerrar sesión WhatsApp (desvincula del teléfono + elimina archivos)
+app.post('/api/admin/whatsapp-logout', verificarToken, esAdmin, async (req, res) => {
+  try {
+    await whatsapp.cerrarSesion();
+    res.json({ mensaje: 'Sesión de WhatsApp cerrada. Puedes conectar con otra cuenta.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Error al cerrar sesión' });
+  }
+});
+
 // Enviar mensaje de prueba
 app.post('/api/admin/whatsapp-test', verificarToken, esAdmin, [
   body('telefono').trim().matches(/^\+?\d{7,15}$/).withMessage('Teléfono inválido'),

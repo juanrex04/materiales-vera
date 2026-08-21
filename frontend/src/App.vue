@@ -26,7 +26,3 @@ const mostrarNavbar = computed(() => {
   return true;
 });
 </script>
-
-<style>
-/* Si tienes estilos globales, se quedan aquí */
-</style>

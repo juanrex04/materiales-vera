@@ -10,7 +10,7 @@
       </div>
 
       <button
-        v-if="estado !== 'conectado'"
+        v-if="estado === 'desconectado'"
         class="btn-primary"
         :disabled="conectando"
         @click="conectar"
@@ -19,15 +19,39 @@
         {{ conectando ? 'Conectando...' : 'Conectar WhatsApp' }}
       </button>
 
-      <button v-else class="btn-secondary" style="display: none;" disabled>
-        Conectado
+      <button
+        v-if="estado === 'qr_pendiente'"
+        class="btn-cancel"
+        :disabled="cancelando"
+        @click="cancelar"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        {{ cancelando ? 'Cancelando...' : 'Cancelar' }}
       </button>
+
+      <button
+        v-if="estado === 'conectado'"
+        class="btn-cancel"
+        :disabled="cerrando"
+        @click="cerrarSesion"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        {{ cerrando ? 'Cerrando...' : 'Cerrar sesión' }}
+      </button>
+    </div>
+
+    <div v-if="estado === 'qr_pendiente' && !qrImage" class="qr-loading">
+      <p>Generando código QR...</p>
     </div>
 
     <div v-if="qrImage" class="qr-container">
       <p>Escanea este código QR con tu celular:</p>
       <p class="qr-instruccion">WhatsApp → Ajustes → Dispositivos vinculados → Vincular dispositivo</p>
       <img :src="qrImage" alt="QR de WhatsApp" class="qr-imagen" />
+      <div class="qr-countdown">
+        <div class="qr-countdown-bar" :style="{ width: qrCountdownPercent + '%' }"></div>
+        <span class="qr-countdown-text">Expira en {{ qrCountdown }}s</span>
+      </div>
     </div>
 
     <div v-if="estado === 'conectado'" class="test-section">
@@ -70,6 +94,7 @@ import { mostrarToast } from '@/utils/alertas';
 
 const estado = ref('desconectado');
 const qrImage = ref(null);
+const qrExpiraEn = ref(null);
 const conectando = ref(false);
 const socket = ref(null);
 const telefonoPrueba = ref('');
@@ -77,6 +102,10 @@ const enviandoPrueba = ref(false);
 const mensajePrueba = ref('');
 const tipoMensaje = ref('');
 const enviandoAlertas = ref(false);
+const cancelando = ref(false);
+const cerrando = ref(false);
+
+let countdownInterval = null;
 
 const estadoClase = computed(() => ({
   'conectado': estado.value === 'conectado',
@@ -92,28 +121,56 @@ const estadoTexto = computed(() => {
   }
 });
 
+const qrCountdown = ref(0);
+const qrCountdownPercent = ref(0);
+
+function startCountdown() {
+  stopCountdown();
+  countdownInterval = setInterval(() => {
+    if (!qrExpiraEn.value) { stopCountdown(); return; }
+    const remaining = Math.max(0, Math.ceil((qrExpiraEn.value - Date.now()) / 1000));
+    qrCountdown.value = remaining;
+    qrCountdownPercent.value = (remaining / 60) * 100;
+    if (remaining <= 0) stopCountdown();
+  }, 200);
+}
+
+function stopCountdown() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+}
+
+function manejarEstado(data) {
+  estado.value = data.estado;
+  qrImage.value = data.qr;
+  qrExpiraEn.value = data.expiraEn;
+
+  if (data.estado === 'qr_pendiente' && data.expiraEn) {
+    startCountdown();
+  } else {
+    stopCountdown();
+  }
+
+  if (data.estado === 'conectado') { conectando.value = false; cancelando.value = false; }
+  if (data.estado === 'desconectado') { conectando.value = false; cancelando.value = false; }
+}
+
 onMounted(() => {
   socket.value = io(API_URL, { transports: ['websocket', 'polling'] });
-
-  socket.value.on('whatsapp-status', (data) => {
-    estado.value = data.estado;
-    qrImage.value = data.qr;
-    if (data.estado === 'conectado') conectando.value = false;
-    if (data.estado === 'desconectado') conectando.value = false;
-  });
+  socket.value.on('whatsapp-status', manejarEstado);
 
   fetch(`${API_URL}/api/admin/whatsapp-status`, {
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
   })
     .then(r => r.json())
-    .then(data => {
-      estado.value = data.estado;
-      qrImage.value = data.qr;
-    })
+    .then(manejarEstado)
     .catch(() => {});
 });
 
 onUnmounted(() => {
+  stopCountdown();
   if (socket.value) socket.value.disconnect();
 });
 
@@ -126,6 +183,36 @@ async function conectar() {
     });
   } catch {
     conectando.value = false;
+  }
+}
+
+async function cancelar() {
+  cancelando.value = true;
+  try {
+    await fetch(`${API_URL}/api/admin/whatsapp-disconnect`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+  } catch {
+  } finally {
+    cancelando.value = false;
+  }
+}
+
+async function cerrarSesion() {
+  cerrando.value = true;
+  try {
+    const res = await fetch(`${API_URL}/api/admin/whatsapp-logout`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al cerrar sesión');
+    mostrarToast('info', 'Sesión cerrada', data.mensaje);
+  } catch (error) {
+    mostrarToast('error', 'Error al cerrar sesión', error.message);
+  } finally {
+    cerrando.value = false;
   }
 }
 
@@ -170,130 +257,3 @@ async function enviarAlertas() {
   }
 }
 </script>
-
-<style scoped>
-.descripcion-seccion {
-  color: #64748b;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-}
-
-.whatsapp-estado {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.estado-indicador {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-md);
-  background: #f1f5f9;
-  font-size: 0.9rem;
-}
-
-.estado-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #94a3b8;
-}
-
-.estado-indicador.conectado .estado-dot { background: #22c55e; }
-.estado-indicador.pendiente .estado-dot { background: #f59e0b; animation: pulso 1.5s infinite; }
-.estado-indicador.desconectado .estado-dot { background: #94a3b8; }
-
-@keyframes pulso {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.qr-container {
-  text-align: center;
-  padding: 1.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  background: white;
-}
-
-.qr-instruccion {
-  color: #64748b;
-  font-size: 0.8rem;
-  margin-bottom: 1rem;
-}
-
-.qr-imagen {
-  width: 256px;
-  height: 256px;
-  border-radius: var(--radius-md);
-}
-
-.test-section {
-  margin-top: 1.5rem;
-  padding: 1.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  background: white;
-}
-
-.test-section h4 {
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-}
-
-.test-form {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-@media (max-width: 480px) {
-  .test-form {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
-.telefono-input-group {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.telefono-prefix {
-  padding: 0.5rem 0.75rem;
-  background: #f1f5f9;
-  color: #475569;
-  font-weight: 600;
-  font-size: 0.9rem;
-  border-right: 1px solid var(--border-color);
-  user-select: none;
-}
-
-.input-telefono {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
-  border: none;
-  font-size: 0.9rem;
-  outline: none;
-}
-
-.mensaje-feedback {
-  margin-top: 0.75rem;
-  font-size: 0.85rem;
-}
-
-.mensaje-feedback.exito {
-  color: #16a34a;
-}
-
-.mensaje-feedback.error {
-  color: #dc2626;
-}
-</style>
